@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Star, Home as HomeIcon, Droplet, Lock } from "lucide-react";
+import { ArrowRight, Home as HomeIcon, Droplet, Lock } from "lucide-react";
 import { Link } from "wouter";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const container = {
@@ -38,11 +39,11 @@ export default function Home() {
               Desde grifería escultural hasta cerraduras inteligentes. Redefinimos el minimalismo con colores vivos y tecnología punta.
             </p>
             <div className="flex gap-4">
-              <Link href="/shop" className="bg-accent text-white px-10 py-5 rounded-2xl font-bold shadow-2xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+              <Link href="/shop" className="bg-accent text-white px-10 py-5 rounded-2xl font-bold shadow-2xl shadow-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group cursor-pointer">
                 Ver Catálogo
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/contact" className="bg-white text-primary px-10 py-5 rounded-2xl font-bold border border-border hover:bg-muted transition-all">
+              <Link href="/contact" className="bg-white text-primary px-10 py-5 rounded-2xl font-bold border border-border hover:bg-muted transition-all cursor-pointer">
                 Asesoría
               </Link>
             </div>
@@ -71,7 +72,7 @@ export default function Home() {
             <h2 className="text-5xl font-serif text-primary mb-4">Nuestros Especialistas</h2>
             <p className="text-muted-foreground text-lg">Curaduría experta para cada rincón de tu hogar.</p>
           </div>
-          <Link href="/shop" className="text-accent font-bold flex items-center gap-2 group">
+          <Link href="/shop" className="text-accent font-bold flex items-center gap-2 group cursor-pointer">
             Ver Todo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
