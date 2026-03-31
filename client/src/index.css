@@ -2,26 +2,26 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --color-background: hsl(40 30% 95%); /* Soft Beige */
-  --color-foreground: hsl(220 60% 10%); /* Deep Navy */
+  --color-background: #3D2852; /* Main Dark Purple */
+  --color-foreground: #E6E6E6; /* Light Grey Text */
   
-  --color-primary: hsl(220 60% 15%); /* Navy Blue */
-  --color-primary-foreground: hsl(40 30% 98%);
+  --color-primary: #5A3F73; /* Medium Purple */
+  --color-primary-foreground: #E6E6E6;
   
-  --color-secondary: hsl(25 40% 30%); /* Coffee/Brown */
-  --color-secondary-foreground: hsl(40 30% 98%);
+  --color-secondary: #2A1B38; /* Deep Purple */
+  --color-secondary-foreground: #E6E6E6;
   
-  --color-muted: hsl(40 20% 90%);
-  --color-muted-foreground: hsl(25 20% 40%);
+  --color-muted: #4A3362;
+  --color-muted-foreground: #B0A0C0;
   
-  --color-accent: hsl(25 40% 25%); /* Rich Coffee */
-  --color-accent-foreground: hsl(40 30% 98%);
+  --color-accent: #E6E6E6; /* Light Grey Accent */
+  --color-accent-foreground: #3D2852;
   
-  --color-border: hsl(40 20% 85%);
-  --color-input: hsl(40 20% 88%);
-  --color-ring: hsl(220 60% 15%);
+  --color-border: #4A3362;
+  --color-input: #4A3362;
+  --color-ring: #5A3F73;
   
-  --radius: 1.25rem; 
+  --radius: 1.5rem; 
   
   --font-serif: "Cormorant Garamond", serif;
   --font-sans: "Montserrat", sans-serif;
