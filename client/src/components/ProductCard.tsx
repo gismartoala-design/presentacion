@@ -11,45 +11,53 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   return (
     <motion.div 
-      whileHover={{ y: -5 }}
-      className="group bg-[#2A1B38]/40 backdrop-blur-xl rounded-3xl overflow-hidden shadow-2xl hover:shadow-[#5A3F73]/20 transition-all border border-[#5A3F73]/30"
+      whileHover={{ y: -8 }}
+      className="group bg-white rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-primary/20"
     >
-      <Link href={`/product/${product.id}`} className="block relative aspect-square overflow-hidden">
+      <Link href={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden">
         <img 
           src={product.image} 
           alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
         />
-        <div className="absolute top-4 right-4 z-10">
-          <button className="bg-[#3D2852]/80 backdrop-blur-md p-3 rounded-full text-[#E6E6E6] shadow-lg hover:bg-[#5A3F73] transition-all scale-0 group-hover:scale-100 origin-center duration-300 border border-[#E6E6E6]/10">
-            <Heart className="w-5 h-5 fill-current" />
-          </button>
-        </div>
+        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500" />
+        
         {product.isBestSeller && (
-          <div className="absolute top-4 left-4 z-10 bg-[#5A3F73] text-[#E6E6E6] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg border border-[#E6E6E6]/10">
+          <div className="absolute top-6 left-6 z-10 bg-accent text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
             Más Vendido
           </div>
         )}
       </Link>
       
       <div className="p-8 text-center flex flex-col items-center">
-        <span className="text-[10px] font-black text-[#5A3F73] uppercase tracking-widest mb-2">
+        <span className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">
           {product.category}
         </span>
-        <h3 className="text-xl font-serif font-bold text-[#E6E6E6] mb-2 truncate max-w-full">
+        <h3 className="text-2xl font-serif font-bold text-foreground mb-3 leading-tight">
           {product.name}
         </h3>
-        <p className="text-2xl font-black text-white mb-6 drop-shadow-sm">
+        
+        <div className="flex flex-wrap justify-center gap-2 mb-6 opacity-60">
+           <span className="text-[9px] font-bold uppercase tracking-wider bg-muted px-3 py-1 rounded-full">{product.size}</span>
+           <span className="text-[9px] font-bold uppercase tracking-wider bg-muted px-3 py-1 rounded-full">🕒 {product.deliveryTime}</span>
+        </div>
+
+        <p className="text-3xl font-black text-foreground mb-8">
           {product.price}
         </p>
-        
-        <div className="flex gap-3 w-full">
-          <Link href={`/product/${product.id}`} className="flex-1 bg-[#5A3F73] hover:bg-[#4A3362] text-[#E6E6E6] py-4 rounded-2xl font-bold transition-all shadow-xl shadow-[#2A1B38] flex items-center justify-center gap-2 border border-[#E6E6E6]/10">
-            Comprar
+
+        <div className="flex flex-col gap-3 w-full">
+          <Link href={`/product/${product.id}`} className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
+            Comprar ahora
           </Link>
-          <button className="bg-[#2A1B38] hover:bg-[#3D2852] text-[#E6E6E6] p-4 rounded-2xl transition-all border border-[#5A3F73]/30">
-            <ShoppingBag className="w-6 h-6" />
-          </button>
+          <a 
+            href={`https://wa.me/593987654321?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-accent/10 hover:bg-accent text-accent hover:text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-accent/20 flex items-center justify-center gap-2"
+          >
+            Pedir por WhatsApp
+          </a>
         </div>
       </div>
     </motion.div>

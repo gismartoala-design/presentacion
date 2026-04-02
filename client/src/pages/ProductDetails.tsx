@@ -10,37 +10,38 @@ export default function ProductDetails() {
   const product = INITIAL_PRODUCTS.find(p => p.id === params?.id);
   const [selectedImage, setSelectedImage] = useState(product?.image);
 
-  if (!product) return <div className="pt-40 text-center text-[#E6E6E6]">Producto no encontrado</div>;
+  if (!product) return <div className="pt-40 text-center text-foreground font-serif text-2xl">Producto no encontrado</div>;
 
   return (
-    <div className="min-h-screen bg-[#3D2852] pt-32 pb-20 px-6">
+    <div className="min-h-screen bg-background pt-40 pb-20 px-6">
       <div className="container mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Photos Section */}
-          <div className="space-y-6">
+          <div className="space-y-8 flex flex-col items-center lg:items-start">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative aspect-square rounded-[3rem] overflow-hidden border border-[#5A3F73]/30 shadow-2xl group bg-[#2A1B38]/40 backdrop-blur-xl"
+              className="relative aspect-[4/5] w-full max-w-xl rounded-[3rem] overflow-hidden border border-primary/20 shadow-2xl group bg-white"
             >
               <img 
                 src={selectedImage} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 cursor-zoom-in"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 cursor-zoom-in"
                 alt={product.name}
               />
-              <button className="absolute top-6 right-6 p-4 bg-[#3D2852]/80 backdrop-blur-md rounded-full text-[#E6E6E6] shadow-xl border border-[#E6E6E6]/10">
+              <button className="absolute top-8 right-8 p-4 bg-white/80 backdrop-blur-md rounded-full text-accent shadow-xl border border-primary/10 hover:scale-110 transition-transform">
                 <Heart className="w-6 h-6" />
               </button>
             </motion.div>
             
-            <div className="flex gap-4">
+            <div className="flex gap-4 justify-center lg:justify-start w-full max-w-xl overflow-x-auto pb-4 no-scrollbar">
               {[product.image, ...(product.additionalImages || [])].map((img, i) => (
                 <button 
                   key={i}
                   onMouseEnter={() => setSelectedImage(img)}
+                  onClick={() => setSelectedImage(img)}
                   className={cn(
-                    "w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all",
-                    selectedImage === img ? "border-[#5A3F73] scale-105" : "border-[#E6E6E6]/10"
+                    "w-24 h-24 min-w-[6rem] rounded-2xl overflow-hidden border-2 transition-all transition-transform hover:scale-105",
+                    selectedImage === img ? "border-accent shadow-lg" : "border-primary/10"
                   )}
                 >
                   <img src={img} className="w-full h-full object-cover" alt={`view-${i}`} />
@@ -50,43 +51,61 @@ export default function ProductDetails() {
           </div>
 
           {/* Info Section */}
-          <div className="flex flex-col">
-            <span className="text-[#5A3F73] font-black uppercase tracking-[0.3em] text-xs mb-4">
-              {product.category}
-            </span>
-            <h1 className="text-5xl md:text-6xl font-serif font-bold text-[#E6E6E6] mb-6 leading-tight">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-[1px] bg-accent/30"></div>
+              <span className="text-accent font-black uppercase tracking-[0.4em] text-[10px]">
+                {product.category}
+              </span>
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-8 leading-tight italic">
               {product.name}
             </h1>
-            <div className="flex items-center gap-6 mb-8 text-center bg-[#2A1B38]/60 p-8 rounded-3xl w-fit border border-[#5A3F73]/20 shadow-xl">
-               <span className="text-4xl font-black text-white font-serif">{product.price}</span>
+
+            <div className="flex items-center gap-6 mb-12">
+               <span className="text-5xl font-black text-foreground font-serif underline decoration-accent/20 underline-offset-8 decoration-4">{product.price}</span>
+               <div className="px-4 py-1 bg-accent/10 text-accent rounded-full text-[10px] font-black uppercase tracking-widest border border-accent/20">Disponible Ahora</div>
             </div>
 
-            <p className="text-[#E6E6E6]/60 text-lg leading-relaxed mb-10 max-w-xl font-medium italic">
-              {product.description}
+            <p className="text-foreground/60 text-xl leading-relaxed mb-12 max-w-xl font-serif italic border-l-4 border-primary/30 pl-8">
+              "{product.description}"
             </p>
 
-            <div className="space-y-4 mb-12">
-               <div className="flex items-center gap-4 text-[#E6E6E6]/80 font-medium">
-                 <div className="w-10 h-10 bg-[#5A3F73] rounded-xl flex items-center justify-center text-[#E6E6E6] border border-[#E6E6E6]/10 shadow-lg"><Truck className="w-5 h-5"/></div>
-                 <span>Envío express en Guayaquil: <strong>{product.deliveryTime}</strong></span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-16">
+               <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Lo que recibes</h4>
+                  <p className="text-foreground/80 font-medium text-sm leading-relaxed">{product.includes}</p>
                </div>
-               <div className="flex items-center gap-4 text-[#E6E6E6]/80 font-medium">
-                 <div className="w-10 h-10 bg-[#5A3F73] rounded-xl flex items-center justify-center text-[#E6E6E6] border border-[#E6E6E6]/10 shadow-lg"><ShieldCheck className="w-5 h-5"/></div>
-                 <span>Calidad Premium: <strong className="text-white">Flores de exportación fresas hoy</strong></span>
+               <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Dimensiones</h4>
+                  <p className="text-foreground/80 font-medium text-sm leading-relaxed">{product.size}</p>
+               </div>
+               <div className="space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-accent">Promesa de Entrega</h4>
+                  <p className="text-foreground/80 font-medium text-sm leading-relaxed flex items-center gap-2">
+                    <Clock className="w-4 h-4" /> {product.deliveryTime} (Guayaquil)
+                  </p>
                </div>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 mt-auto">
-              <button className="flex-1 bg-[#5A3F73] hover:bg-[#4A3362] text-[#E6E6E6] py-6 rounded-3xl font-black text-lg transition-all shadow-xl shadow-[#2A1B38] active:scale-95 flex items-center justify-center gap-3 border border-[#E6E6E6]/10">
+              <button className="flex-1 bg-accent hover:bg-accent/90 text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3">
                 Comprar ahora
               </button>
               <a 
-                href={`https://wa.me/593987654321?text=Hola, quiero pedir: ${product.name}`} 
+                href={`https://wa.me/593987654321?text=Hola!%20Deseo%20ordenar%20el%20arreglo:%20${product.name}`} 
                 target="_blank"
-                className="flex-1 border-2 border-[#25D366] text-[#25D366] hover:bg-[#25D366] hover:text-white py-6 rounded-3xl font-black text-lg transition-all flex items-center justify-center gap-3"
+                rel="noopener noreferrer"
+                className="flex-1 bg-white border-2 border-accent/40 text-accent hover:bg-accent hover:text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3 shadow-xl"
               >
                 <MessageSquare className="w-6 h-6" /> Pedir por WhatsApp
               </a>
+            </div>
+            
+            <div className="mt-12 pt-12 border-t border-primary/10 flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest text-foreground/30">
+               <span className="flex items-center gap-2"><Truck className="w-4 h-4"/> Envío Seguro</span>
+               <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4"/> Pago Protegido</span>
             </div>
           </div>
         </div>

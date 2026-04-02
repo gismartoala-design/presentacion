@@ -14,6 +14,8 @@ export interface Product {
   isBestSeller: boolean;
   stock: number;
   deliveryTime: string;
+  size: string;
+  includes: string;
 }
 
 export const CATEGORIES = [
@@ -60,7 +62,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product1.png"],
     isBestSeller: true,
     stock: 15,
-    deliveryTime: "2-3 horas"
+    deliveryTime: "2-3 horas",
+    size: "50cm x 35cm",
+    includes: "24 Rosas rojas de exportación, tarjeta de dedicatoria, papel decorativo y lazo."
   },
   {
     id: "2",
@@ -72,7 +76,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product2.png"],
     isBestSeller: true,
     stock: 12,
-    deliveryTime: "2-4 horas"
+    deliveryTime: "2-4 horas",
+    size: "40cm x 30cm",
+    includes: "Lirios, margaritas, claveles, follaje seco y florero de vidrio."
   },
   {
     id: "3",
@@ -84,7 +90,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product3.png"],
     isBestSeller: true,
     stock: 8,
-    deliveryTime: "En la mañana (6am - 10am)"
+    deliveryTime: "En la mañana (6am - 10am)",
+    size: "Cesta Estándar",
+    includes: "Café, 2 croissants, ensalada de frutas, jugo natural, mini arreglo floral."
   },
   {
     id: "4",
@@ -96,7 +104,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product4.png"],
     isBestSeller: false,
     stock: 20,
-    deliveryTime: "2-3 horas"
+    deliveryTime: "2-3 horas",
+    size: "25cm x 25cm",
+    includes: "12 Rosas seleccionadas, caja de lujo cuadrada, lazo de raso."
   },
   {
     id: "5",
@@ -108,7 +118,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product5.png"],
     isBestSeller: false,
     stock: 5,
-    deliveryTime: "3-5 horas"
+    deliveryTime: "3-5 horas",
+    size: "Caja de Regalo Grande",
+    includes: "Vino Cabernet Sauvignon 750ml, arreglo floral lateral, caja rígida decorada."
   },
   {
     id: "6",
@@ -120,7 +132,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     additionalImages: ["/assets/product6.png"],
     isBestSeller: false,
     stock: 10,
-    deliveryTime: "2-4 horas"
+    deliveryTime: "2-4 horas",
+    size: "45cm x 35cm",
+    includes: "Flores mixtas brillantes, globo metálico con helio, envoltura festiva."
   }
 ];
 
@@ -133,3 +147,63 @@ export const SALES_DATA = [
   { month: "May", sales: 18900 },
   { month: "Jun", sales: 10500 },
 ];
+
+export const TESTIMONIALS = [
+  {
+    name: "Stalin Espinoza",
+    role: "Cliente",
+    content: "Muchas Gracias. Felicitaciones, siguen teniendo un excelente servicio.",
+    stars: 5
+  },
+  {
+    name: "María Fernanda G.",
+    role: "Cliente Frecuente",
+    content: "Los mejores arreglos de Guayaquil. El servicio a domicilio es impecable.",
+    stars: 5
+  }
+];
+
+export const COMPANY_INFO = {
+  description: "Florería en Guayaquil con entrega a domicilio en 2 horas en toda la ciudad. Arreglos florales, desayunos sorpresa y regalos para sorprender hoy mismo.",
+  history: "DIFIORI: Diseñando emociones con flores frescas y exclusivas. La elegancia y el detalle son nuestra firma desde 2010.",
+  frescura: "Frescura Garantizada: Flores seleccionadas y recién cortadas, listas para regalar.",
+  personalizacion: "Regalos personalizados en Guayaquil: Asesoría profesional para que cada detalle sea único."
+};
+
+export const FAQS = [
+  {
+    question: "¿Tienen entrega inmediata?",
+    answer: "Sí, entregamos en un rango de 2 horas en toda la ciudad de Guayaquil."
+  },
+  {
+    question: "¿Cómo puedo cuidar mis flores?",
+    answer: "Consulta nuestra guía de cuidado para que tus flores duren mucho más tiempo."
+  },
+  {
+    question: "¿Aceptan pagos con tarjeta?",
+    answer: "Aceptamos todas las tarjetas de crédito, transferencias y pagos por WhatsApp."
+  }
+];
+
+export const CARE_GUIDE = [
+  {
+    step: "Corte los tallos",
+    description: "Corte 2cm de los tallos en diagonal al recibir sus flores."
+  },
+  {
+    step: "Agua fresca",
+    description: "Cambie el agua del florero cada dos días y asegúrese de que esté limpia."
+  },
+  {
+    step: "Ubicación ideal",
+    description: "Mantenga las flores en un lugar fresco, lejos de la luz solar directa y corrientes de aire."
+  }
+];
+
+export const CONTACT_DETAILS = {
+  phone: "+(593) 099 7984 583",
+  whatsapp: "+(593) 099 7984 583",
+  email: "ventas@difiori.com.ec",
+  address: "Guayaquil, Ecuador"
+};
+

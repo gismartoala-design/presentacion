@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { ShoppingBag, Menu, X, MessageSquare } from "lucide-react";
+import { ShoppingBag, Menu, X, MessageSquare, Search, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,107 +11,199 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleScroll = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const links = [
-    { href: "/", label: "Inicio" },
+  const leftLinks = [
     { href: "#ramos", label: "Ramos" },
     { href: "#desayunos", label: "Desayunos" },
-    { href: "#mas-vendidos", label: "Más vendidos" },
+    { href: "#mas-vendidos", label: "Colecciones" },
+  ];
+
+  const rightLinks = [
+    { href: "/journal", label: "Journal" },
     { href: "/contact", label: "Contacto" },
   ];
 
   return (
     <>
-      <nav className={cn(
-        "fixed top-0 w-full z-50 transition-all duration-500 py-4",
-        scrolled ? "bg-[#3D2852]/90 backdrop-blur-xl border-b border-[#5A3F73] shadow-lg" : "bg-transparent text-[#E6E6E6]"
-      )}>
-        <div className="container mx-auto px-6 flex items-center justify-between">
-          <Link href="/" className="group flex items-center gap-2">
-            <Logo variant="light" size="sm" className="opacity-90 group-hover:opacity-100 transition-opacity" />
-          </Link>
+      {/* Top Promo Bar - Very thin, elegant */}
+      <div className="bg-foreground text-white py-1.5 text-center text-[9px] uppercase tracking-[0.3em] font-medium relative z-[60]">
+        Envío sin costo hoy en Guayaquil en pedidos superiores a $50
+      </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-10">
-            <div className="flex gap-8">
-              {links.map((link) => (
+      <nav className={cn(
+        "fixed top-0 w-full z-50 transition-all duration-1000",
+        // When scrolled: add a highly refined glass effect with an extra thin border.
+        // Also add top padding to account for the promo bar scrolling out of view (if we made it scroll, but here it's static at the top of the body. Since the nav is fixed top-0, we need to push it down initially, or let it overlap. Better to make the nav fixed below the promo bar or transition it).
+        // For a seamless Maison look, we'll keep the nav right at the top but add padding.
+        scrolled ? "bg-white/85 backdrop-blur-3xl border-b border-primary/10 shadow-[0_10px_30px_rgba(0,0,0,0.03)] py-4 translate-y-0" : "bg-transparent py-8 translate-y-6"
+      )}>
+        <div className="container mx-auto px-6 lg:px-12">
+          {/* Main Desktop Grid */}
+          <div className="hidden lg:grid grid-cols-3 items-center">
+            
+            {/* Left Menu */}
+            <div className="flex items-center gap-10 justify-start">
+              {leftLinks.map((link) => (
                 <a 
                   key={link.label} 
                   href={link.href}
                   className={cn(
-                    "text-sm font-semibold tracking-wide hover:text-white transition-colors relative group",
-                    (location === link.href) ? "text-white" : "text-[#E6E6E6]/80"
+                    "text-[10px] uppercase font-bold tracking-[0.3em] transition-all duration-500 relative group",
+                    scrolled ? "text-foreground/70 hover:text-foreground" : "text-white/80 hover:text-white"
                   )}
                 >
                   {link.label}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#E6E6E6] transition-all group-hover:w-full"></span>
+                  <span className={cn(
+                    "absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-[1px] transition-all duration-500 group-hover:w-full",
+                    scrolled ? "bg-accent/40" : "bg-white/60"
+                  )}></span>
                 </a>
               ))}
             </div>
-            
-            <div className="flex items-center gap-4 pl-8 border-l border-[#E6E6E6]/20">
-              <Link href="/checkout" className="relative p-2 transition-colors hover:text-white text-[#E6E6E6]">
-                <ShoppingBag className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#5A3F73] text-[10px] text-[#E6E6E6] flex items-center justify-center rounded-full border border-[#E6E6E6]/20">2</span>
+
+            {/* Center Logo */}
+            <div className="flex justify-center items-center">
+              <Link href="/" className="group flex items-center">
+                 <Logo 
+                   size={scrolled ? "sm" : "md"} 
+                   variant={scrolled ? "dark" : "light"}
+                   className="transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" 
+                 />
               </Link>
             </div>
-          </div>
 
-          {/* Mobile Toggle */}
-          <button 
-            className="md:hidden p-2 text-[#E6E6E6]"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <X /> : <Menu />}
-          </button>
-        </div>
-
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="md:hidden absolute top-0 right-0 h-screen w-64 bg-[#2A1B38] shadow-2xl p-8 flex flex-col gap-6 z-50 pt-20 border-l border-[#5A3F73]"
-            >
-              <button 
-                className="absolute top-6 right-6 text-[#E6E6E6]/50"
-                onClick={() => setIsOpen(false)}
-              >
-                <X />
-              </button>
-              {links.map((link) => (
+            {/* Right Menu & Icons */}
+            <div className="flex items-center gap-10 justify-end">
+              {rightLinks.map((link) => (
                 <a 
                   key={link.label} 
                   href={link.href}
-                  className="text-lg font-bold text-[#E6E6E6] hover:text-white transition-colors"
-                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "text-[10px] uppercase font-bold tracking-[0.3em] transition-all duration-500 relative group hidden xl:block",
+                    scrolled ? "text-foreground/70 hover:text-foreground" : "text-white/80 hover:text-white"
+                  )}
                 >
                   {link.label}
+                  <span className={cn(
+                    "absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-[1px] transition-all duration-500 group-hover:w-full",
+                    scrolled ? "bg-accent/40" : "bg-white/60"
+                  )}></span>
                 </a>
               ))}
+
+              <div className="flex items-center gap-6 border-l pl-8 transition-colors duration-500" style={{ borderLeftColor: scrolled ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)' }}>
+                <button className={cn("transition-all hover:scale-110", scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}>
+                  <Search className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+                <button className={cn("transition-all hover:scale-110", scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}>
+                  <User className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+                <Link href="/checkout" className={cn(
+                  "relative transition-all hover:scale-110 flex items-center gap-2",
+                  scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white"
+                )}>
+                  <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+                  <span className="text-[10px] font-medium tracking-widest">(2)</span>
+                </Link>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="lg:hidden flex items-center justify-between">
+            <button 
+              className={cn("p-1 transition-colors", scrolled ? "text-foreground" : "text-white")}
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <Menu strokeWidth={1.5} />
+            </button>
+
+            <Link href="/" className="flex items-center absolute left-1/2 -translate-x-1/2">
+               <Logo size="sm" variant={scrolled ? "dark" : "light"} />
+            </Link>
+
+            <Link href="/checkout" className={cn(
+              "relative p-1 transition-colors",
+              scrolled ? "text-foreground" : "text-white"
+            )}>
+              <ShoppingBag strokeWidth={1.5} />
+              <span className="absolute top-0 right-0 w-3 h-3 bg-accent text-[7px] text-white flex items-center justify-center rounded-full font-black">2</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Mobile Menu Fullscreen Overlay */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
+              className="lg:hidden fixed inset-0 h-screen w-full bg-background/95 backdrop-blur-3xl p-8 flex flex-col z-[100]"
+            >
+              <div className="flex justify-between items-center mb-16">
+                 <Logo size="sm" variant="dark" />
+                 <button 
+                  className="text-foreground/50 hover:text-foreground transition-colors p-2"
+                  onClick={() => setIsOpen(false)}
+                 >
+                  <X strokeWidth={1.5} />
+                 </button>
+              </div>
+              
+              <div className="flex flex-col gap-8 items-center text-center mt-8">
+                {[...leftLinks, ...rightLinks].map((link) => (
+                  <a 
+                    key={link.label} 
+                    href={link.href}
+                    className="text-2xl font-serif italic text-foreground/80 hover:text-accent transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </nav>
 
       {/* Fixed WhatsApp Button */}
-      <a 
-        href="https://wa.me/593987654321" 
+      <motion.a 
+        initial={{ opacity: 0, y: 30, scale: 0.7 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ delay: 1, duration: 1.5, ease: [0.23, 1, 0.32, 1] }}
+        whileHover={{ scale: 1.1, y: -10 }}
+        whileTap={{ scale: 0.9 }}
+        href="https://wa.me/5930997984583" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="fixed bottom-8 right-8 z-[100] bg-[#25D366] text-white p-4 rounded-full shadow-[0_10px_20px_rgba(37,211,102,0.4)] hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group"
+        className="fixed bottom-8 right-8 z-[100] bg-accent w-[60px] h-[60px] rounded-full shadow-[0_20px_50px_rgba(90,63,115,0.4)] hover:shadow-[0_30px_60px_rgba(90,63,115,0.6)] transition-all duration-700 flex items-center justify-center group border border-white/10"
       >
-        <MessageSquare className="w-6 h-6 fill-white" />
-        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-bold whitespace-nowrap">
-          ¿En qué podemos ayudarte?
-        </span>
-      </a>
+        <div className="relative w-7 h-7 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
+          <svg 
+            viewBox="0 0 24 24" 
+            className="w-full h-full drop-shadow-lg" 
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path 
+              fill="white" 
+              d="M12.031 0C5.39 0 0 5.385 0 12.028a11.96 11.96 0 001.597 6.036L0 24l6.117-1.605a11.968 11.968 0 005.918 1.564c6.64 0 12.03-5.388 12.03-12.031C24.065 5.385 18.671 0 12.031 0z"
+            />
+            <path 
+              fill="#5A3F73" 
+              d="M17.362 14.156c-.292-.146-1.728-.853-1.996-.95-.264-.097-.456-.145-.648.145-.192.29-.74.922-.907 1.114-.167.19-.334.213-.626.067-.282-.143-1.222-.45-2.328-1.435-.86-.767-1.437-1.716-1.606-2.008-.168-.291-.018-.45.126-.595.13-.133.292-.34.437-.51.144-.17.191-.291.286-.485.096-.194.048-.363-.024-.51-.07-.145-.648-1.562-.888-2.14-.23-.559-.47-.48-.648-.49-.168-.008-.36-.01-.55-.01s-.51.074-.77.345c-.26.29-1 .976-1 2.428s1.026 2.85 1.17 3.045c.145.195 2.02 3.084 4.89 4.33.682.296 1.215.474 1.63.606.69.219 1.317.187 1.815.113.553-.081 1.73-.705 1.972-1.385.242-.68.242-1.262.17-1.385-.078-.124-.282-.195-.572-.34z"
+            />
+          </svg>
+        </div>
+      </motion.a>
     </>
   );
 }
+

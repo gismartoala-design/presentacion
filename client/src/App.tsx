@@ -4,7 +4,6 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/Navbar";
 import { IntroScreen } from "@/components/IntroScreen";
-import { PresentationToggle } from "@/components/PresentationToggle";
 import Home from "@/pages/Home";
 import HomeV2 from "@/pages/v2/HomeV2";
 import Admin from "@/pages/Admin";
@@ -35,7 +34,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="relative min-h-screen text-foreground selection:bg-[#5A3F73] selection:text-white">
-        <PresentationToggle />
         <AnimatePresence>
           {showIntro ? (
             <IntroScreen key="intro" onEnter={() => setShowIntro(false)} />

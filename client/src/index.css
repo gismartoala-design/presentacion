@@ -2,40 +2,60 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --color-background: #3D2852; /* Main Dark Purple */
-  --color-foreground: #E6E6E6; /* Light Grey Text */
+  --color-background: #FDF8FF; /* Soft Cream Lavender */
+  --color-foreground: #4A3362; /* Deep Muted Purple for text */
   
-  --color-primary: #5A3F73; /* Medium Purple */
-  --color-primary-foreground: #E6E6E6;
+  --color-primary: #EBDCF7; /* Pastel Lavender */
+  --color-primary-foreground: #4A3362;
   
-  --color-secondary: #2A1B38; /* Deep Purple */
-  --color-secondary-foreground: #E6E6E6;
+  --color-secondary: #FCE8EF; /* Petal Pink */
+  --color-secondary-foreground: #4A3362;
   
-  --color-muted: #4A3362;
-  --color-muted-foreground: #B0A0C0;
+  --color-muted: #F3EAFD; /* Very Light Muted Purple */
+  --color-muted-foreground: #6B5487;
   
-  --color-accent: #E6E6E6; /* Light Grey Accent */
-  --color-accent-foreground: #3D2852;
+  --color-accent: #5A3F73; /* Medium Purple for interactive elements */
+  --color-accent-foreground: #FDF8FF;
   
-  --color-border: #4A3362;
-  --color-input: #4A3362;
-  --color-ring: #5A3F73;
+  --color-border: #EBDCF7;
+  --color-input: #EBDCF7;
+  --color-ring: #EBDCF7;
   
   --radius: 1.5rem; 
   
   --font-serif: "Cormorant Garamond", serif;
   --font-sans: "Montserrat", sans-serif;
+  --font-elegant-script: "Great Vibes", cursive;
+  --font-playfair: "Playfair Display", serif;
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
   * {
     @apply border-border;
   }
   body {
     @apply font-sans antialiased bg-background text-foreground selection:bg-accent selection:text-white;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-semibold;
+  }
+
+  /* Custom Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-primary/20 hover:bg-primary/30 transition-colors;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent/40 rounded-full hover:bg-accent/60 transition-all border-2 border-transparent bg-clip-padding;
   }
 }
 

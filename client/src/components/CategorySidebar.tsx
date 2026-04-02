@@ -9,18 +9,18 @@ export function CategorySidebar() {
   const [activeCategory, setActiveCategory] = useState("Ramos de rosas");
 
   return (
-    <div className="w-full lg:w-64 flex flex-col gap-6">
+    <div className="w-full lg:w-72 flex flex-col gap-6">
       {/* Mobile Dropdown */}
-      <div className="lg:hidden w-full relative">
+      <div className="lg:hidden w-full relative group">
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between bg-[#3D2852]/80 backdrop-blur-xl border border-[#5A3F73]/30 p-4 rounded-2xl shadow-xl font-bold text-[#E6E6E6]"
+          className="w-full flex items-center justify-between bg-white border border-primary/20 p-5 rounded-2xl shadow-lg font-black text-xs uppercase tracking-widest text-foreground transition-all active:scale-95"
         >
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-[#5A3F73]" />
-            Categorías: {activeCategory}
+          <div className="flex items-center gap-3">
+            <Filter className="w-4 h-4 text-accent" />
+            Categorías: <span className="text-accent">{activeCategory}</span>
           </div>
-          <ChevronDown className={cn("w-5 h-5 transition-transform", isOpen && "rotate-180")} />
+          <ChevronDown className={cn("w-5 h-5 transition-transform duration-500", isOpen && "rotate-180")} />
         </button>
         
         <AnimatePresence>
@@ -29,14 +29,14 @@ export function CategorySidebar() {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 w-full bg-[#2A1B38] shadow-2xl border border-[#5A3F73]/30 rounded-2xl mt-2 z-40 overflow-hidden"
+              className="absolute top-full left-0 w-full bg-white shadow-2xl border border-primary/20 rounded-2xl mt-3 z-40 overflow-hidden"
             >
               {CATEGORIES.map((cat) => (
                 <button 
                   key={cat.slug} 
                   className={cn(
-                    "w-full text-left p-4 hover:bg-[#5A3F73]/50 transition-colors font-medium border-b border-[#5A3F73]/10 last:border-0",
-                    activeCategory === cat.name ? "text-white bg-[#5A3F73]" : "text-[#E6E6E6]/70"
+                    "w-full text-left p-5 hover:bg-primary/10 transition-colors font-bold text-xs uppercase tracking-widest border-b border-primary/5 last:border-0",
+                    activeCategory === cat.name ? "text-accent bg-primary/5" : "text-foreground/60"
                   )}
                   onClick={() => {
                     setActiveCategory(cat.name);
@@ -52,29 +52,31 @@ export function CategorySidebar() {
       </div>
 
       {/* Desktop Vertical Sidebar */}
-      <div className="hidden lg:flex flex-col gap-2 p-6 bg-[#2A1B38]/40 backdrop-blur-xl border border-[#5A3F73]/30 rounded-[2.5rem] shadow-2xl sticky top-32">
-        <h3 className="text-[#E6E6E6] font-serif font-bold text-2xl mb-6 px-4 flex items-center gap-3">
-          <Sparkles className="w-5 h-5 text-[#5A3F73]" />
-          Categorías
+      <div className="hidden lg:flex flex-col gap-3 p-8 bg-white border border-primary/20 rounded-[3rem] shadow-xl sticky top-32">
+        <h3 className="text-foreground font-serif font-bold text-2xl mb-8 px-2 flex items-center gap-3">
+          <Sparkles className="w-5 h-5 text-accent" />
+          Colecciones
         </h3>
-        {CATEGORIES.map((cat) => (
-          <button 
-            key={cat.slug} 
-            className={cn(
-              "w-full text-left px-5 py-4 rounded-2xl transition-all font-bold text-sm tracking-wide flex items-center justify-between group relative overflow-hidden",
-              activeCategory === cat.name 
-                ? "bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20" 
-                : "text-[#E6E6E6]/50 hover:bg-[#5A3F73]/20 hover:text-[#E6E6E6] border border-transparent"
-            )}
-            onClick={() => setActiveCategory(cat.name)}
-          >
-            <span className="relative z-10">{cat.name}</span>
-            <span className={cn(
-              "w-1.5 h-1.5 rounded-full transition-all relative z-10",
-              activeCategory === cat.name ? "bg-white" : "bg-[#5A3F73] group-hover:scale-150"
-            )}></span>
-          </button>
-        ))}
+        <div className="flex flex-col gap-2">
+          {CATEGORIES.map((cat) => (
+            <button 
+              key={cat.slug} 
+              className={cn(
+                "w-full text-left px-6 py-4 rounded-2xl transition-all duration-300 font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-between group relative overflow-hidden",
+                activeCategory === cat.name 
+                  ? "bg-primary/20 text-accent shadow-sm" 
+                  : "text-foreground/40 hover:bg-primary/10 hover:text-foreground/80 border border-transparent"
+              )}
+              onClick={() => setActiveCategory(cat.name)}
+            >
+              <span className="relative z-10">{cat.name}</span>
+              <div className={cn(
+                "w-1 h-1 rounded-full transition-all duration-500 relative z-10",
+                activeCategory === cat.name ? "bg-accent scale-150" : "bg-primary group-hover:scale-125"
+              )}></div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
