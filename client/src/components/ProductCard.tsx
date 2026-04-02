@@ -10,11 +10,11 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addItem, setIsCartOpen } = useCart();
+  const { buyNow } = useCart();
 
-  const handleAddToCart = () => {
-    addItem(product);
-    setIsCartOpen(true);
+  const handleBuyNow = () => {
+    buyNow(product);
+    window.location.href = "/checkout"; // Safe navigation bypassing Wouter re-renders causing hook conflicts
   };
 
   return (
@@ -55,8 +55,8 @@ export function ProductCard({ product }: ProductCardProps) {
         </p>
 
         <div className="flex flex-col gap-3 w-full">
-          <button onClick={handleAddToCart} className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
-            Añadir al Carrito
+          <button onClick={handleBuyNow} className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
+            Comprar Ahora
           </button>
           <a 
             href={`https://wa.me/593987654321?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}

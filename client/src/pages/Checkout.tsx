@@ -5,9 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 
+const SECTORS = [
+  { name: "Norte (Urdesa, Alborada, Sauces)", price: 0 },
+  { name: "Centro / Sur", price: 3 },
+  { name: "Ceibos / Los Olivos", price: 4 },
+  { name: "Vía a la Costa", price: 5 },
+  { name: "Samborondón / Vía a Salitre", price: 5 },
+  { name: "Durán", price: 6 }
+];
+
 export default function Checkout() {
   const { items, cartTotal } = useCart();
   const [paymentMethod, setPaymentMethod] = useState("Transferencia");
+  const [sector, setSector] = useState(SECTORS[0]);
+
+  const finalTotal = cartTotal + sector.price;
 
   return (
     <div className="min-h-screen bg-[#3D2852] pt-32 pb-20 px-6">
@@ -27,10 +39,31 @@ export default function Checkout() {
                  <User className="w-6 h-6" /> DATOS DE ENTREGA
                </h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Nombre de quien recibe..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Dirección completa..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Tu WhatsApp (Para confirmación)..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Fecha y hora de entrega..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Nombre de quien RECIBE..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Nombre de quien ENVÍA..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Celular (Para confirmaciones)..." />
+                 <input type="datetime-local" className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30 [color-scheme:dark]" />
+                 
+                 <div className="md:col-span-2 space-y-4">
+                   <div className="relative">
+                     <select 
+                       value={sector.name}
+                       onChange={(e) => setSector(SECTORS.find(s => s.name === e.target.value) || SECTORS[0])}
+                       className="w-full bg-[#3D2852]/50 p-6 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-bold cursor-pointer appearance-none shadow-lg"
+                     >
+                       <option value="" disabled className="bg-[#2A1B38] text-white">Selecciona sector de entrega</option>
+                       {SECTORS.map(s => (
+                         <option key={s.name} value={s.name} className="bg-[#2A1B38] text-white py-2">
+                           {s.name} {s.price > 0 ? `(+$${s.price.toFixed(2)})` : '(Envío Gratis)'}
+                         </option>
+                       ))}
+                     </select>
+                     <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                       <Truck className="w-5 h-5 text-[#5A3F73]" />
+                     </div>
+                   </div>
+                   <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Dirección exacta (Ciudadela, Manzana, Villa)..." />
+                 </div>
                </div>
                <textarea className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium h-32 placeholder:text-[#E6E6E6]/30" placeholder="Mensaje para la tarjeta (Opcional)..."></textarea>
             </div>
@@ -111,12 +144,12 @@ export default function Checkout() {
                     <span>${cartTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#E6E6E6]/40 font-medium">
-                    <span>Envío</span>
-                    <span className="text-[#5A3F73]">GRATIS</span>
+                    <span className="truncate max-w-[200px]">Envío ({sector.name.split(" ")[0]})</span>
+                    <span className="text-[#5A3F73]">{sector.price === 0 ? "GRATIS" : `+$${sector.price.toFixed(2)}`}</span>
                   </div>
                   <div className="flex justify-between text-2xl font-black text-[#E6E6E6] pt-4">
                     <span className="font-serif">TOTAL</span>
-                    <span className="text-[#5A3F73]">${cartTotal.toFixed(2)}</span>
+                    <span className="text-[#5A3F73]">${finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
 

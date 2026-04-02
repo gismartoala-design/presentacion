@@ -96,13 +96,15 @@ export function Navbar() {
                 <button className={cn("transition-all hover:scale-110", scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}>
                   <User className="w-4 h-4" strokeWidth={1.5} />
                 </button>
-                <button onClick={() => setIsCartOpen(true)} className={cn(
-                  "relative transition-all hover:scale-110 flex items-center gap-2",
-                  scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white"
-                )}>
-                  <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
-                  <span className="text-[10px] font-medium tracking-widest">({cartItemCount})</span>
-                </button>
+                <Link href="/checkout">
+                  <button className={cn(
+                    "relative transition-all hover:scale-110 flex items-center gap-2",
+                    scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white"
+                  )}>
+                    <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
+                    <span className="text-[10px] font-medium tracking-widest">({cartItemCount})</span>
+                  </button>
+                </Link>
               </div>
             </div>
 
@@ -121,15 +123,17 @@ export function Navbar() {
                <Logo size="sm" variant={scrolled ? "dark" : "light"} />
             </Link>
 
-            <button onClick={() => setIsCartOpen(true)} className={cn(
-              "relative p-1 transition-colors",
-              scrolled ? "text-foreground" : "text-white"
-            )}>
-              <ShoppingBag strokeWidth={1.5} />
-              {cartItemCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-[8px] text-white flex items-center justify-center rounded-full font-black shadow-sm">{cartItemCount}</span>
-              )}
-            </button>
+            <Link href="/checkout">
+              <button className={cn(
+                "relative p-1 transition-colors hover:scale-110",
+                scrolled ? "text-foreground" : "text-white"
+              )}>
+                <ShoppingBag strokeWidth={1.5} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-[8px] text-white flex items-center justify-center rounded-full font-black shadow-sm">{cartItemCount}</span>
+                )}
+              </button>
+            </Link>
           </div>
         </div>
 

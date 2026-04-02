@@ -13,7 +13,6 @@ import Checkout from "@/pages/Checkout";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { CartProvider } from "@/context/CartContext";
-import { CartSheet } from "@/components/CartSheet";
 
 function Router() {
   return (
@@ -29,8 +28,8 @@ function Router() {
 }
 
 function App() {
-  const [showIntro, setShowIntro] = useState(true);
   const [location] = useLocation();
+  const [showIntro, setShowIntro] = useState(location === "/");
   const isV2 = location.startsWith("/v2");
 
   return (
@@ -42,13 +41,12 @@ function App() {
               <IntroScreen key="intro" onEnter={() => setShowIntro(false)} />
             ) : (
               <div key="content" className="relative z-10 transition-opacity duration-1000">
-                {!isV2 && <Navbar />}
+                {!isV2 && location !== "/checkout" && <Navbar />}
                 <Router />
               </div>
             )}
           </AnimatePresence>
           
-          <CartSheet />
           <Toaster />
         </div>
       </CartProvider>
