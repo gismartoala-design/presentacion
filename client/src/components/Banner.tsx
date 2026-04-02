@@ -5,25 +5,25 @@ import { cn } from "@/lib/utils";
 
 const slides = [
   {
-    image: "/assets/banner_collage.jpg",
+    image: "/assets/banner4.png",
     title: "Regalos que trascienden",
     subtitle: "Historias reales de alegría en Guayaquil",
     cta: "Ver testimonios",
   },
   {
-    image: "/assets/banner1.png",
+    image: "https://images.unsplash.com/photo-1508784411316-02b8cd4d3a3a?q=80&w=2000&auto=format&fit=crop",
     title: "Hoy haces su día especial",
     subtitle: "Entrega en Guayaquil en horas",
     cta: "Comprar ahora",
   },
   {
-    image: "/assets/banner2.png",
+    image: "https://images.unsplash.com/photo-1582794543139-8ac9cb0f7b11?q=80&w=2000&auto=format&fit=crop",
     title: "Tu emoción, nuestra pasión",
     subtitle: "Arreglos únicos que hablan por ti",
     cta: "Ver catálogo",
   },
   {
-    image: "/assets/banner3.png",
+    image: "/assets/banner4.png",
     title: "Momentos inolvidables",
     subtitle: "Calidad de exportación en cada detalle",
     cta: "Más vendidos",
@@ -59,7 +59,7 @@ export function Banner() {
               initial={{ scale: 1.15 }}
               animate={{ scale: 1 }}
               transition={{ duration: 25, ease: "linear" }}
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-center contrast-[1.15] saturate-[1.1] brightness-[0.85]"
             />
             {/* Base Overlay to guarantee text readability */}
             <div className="absolute inset-0 bg-black/30" />

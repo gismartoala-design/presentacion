@@ -3,16 +3,24 @@ import { Product } from "@/data/mock";
 import { Link } from "wouter";
 import { ShoppingBag, Heart } from "lucide-react";
 import { motion } from "framer-motion";
+import { useCart } from "@/context/CartContext";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addItem, setIsCartOpen } = useCart();
+
+  const handleAddToCart = () => {
+    addItem(product);
+    setIsCartOpen(true);
+  };
+
   return (
     <motion.div 
       whileHover={{ y: -8 }}
-      className="group bg-white rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-primary/20"
+      className="group bg-white rounded-[2.5rem] overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 border border-primary/20 flex flex-col justify-between"
     >
       <Link href={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden">
         <img 
@@ -29,7 +37,7 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
       </Link>
       
-      <div className="p-8 text-center flex flex-col items-center">
+      <div className="p-8 text-center flex flex-col items-center flex-1">
         <span className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">
           {product.category}
         </span>
@@ -42,14 +50,14 @@ export function ProductCard({ product }: ProductCardProps) {
            <span className="text-[9px] font-bold uppercase tracking-wider bg-muted px-3 py-1 rounded-full">🕒 {product.deliveryTime}</span>
         </div>
 
-        <p className="text-3xl font-black text-foreground mb-8">
+        <p className="text-3xl font-black text-foreground mb-8 mt-auto">
           {product.price}
         </p>
 
         <div className="flex flex-col gap-3 w-full">
-          <Link href={`/product/${product.id}`} className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
-            Comprar ahora
-          </Link>
+          <button onClick={handleAddToCart} className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2">
+            Añadir al Carrito
+          </button>
           <a 
             href={`https://wa.me/593987654321?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}
             target="_blank"

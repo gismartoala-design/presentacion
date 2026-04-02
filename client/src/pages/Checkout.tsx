@@ -1,12 +1,13 @@
-import React from "react";
-import { INITIAL_PRODUCTS } from "@/data/mock";
-import { ShoppingBag, ChevronLeft, CreditCard, Truck, User, Info } from "lucide-react";
+import React, { useState } from "react";
+import { ShoppingBag, ChevronLeft, CreditCard, Truck, User, Upload } from "lucide-react";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+import { useCart } from "@/context/CartContext";
 
 export default function Checkout() {
-  const cartItems = [INITIAL_PRODUCTS[0], INITIAL_PRODUCTS[1]]; // Simulating 2 items
-  const total = cartItems.reduce((acc, item) => acc + parseFloat(item.price.replace("$", "")), 0);
+  const { items, cartTotal } = useCart();
+  const [paymentMethod, setPaymentMethod] = useState("Transferencia");
 
   return (
     <div className="min-h-screen bg-[#3D2852] pt-32 pb-20 px-6">
@@ -26,12 +27,12 @@ export default function Checkout() {
                  <User className="w-6 h-6" /> DATOS DE ENTREGA
                </h3>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium" placeholder="Escribe el nombre de quien recibe..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium" placeholder="Ubicación (Ej: Av. Francisco de Orellana)..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium" placeholder="Tu WhatsApp (Para avisarte)..." />
-                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium" placeholder="Fecha y hora de entrega..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Nombre de quien recibe..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Dirección completa..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Tu WhatsApp (Para confirmación)..." />
+                 <input className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium placeholder:text-[#E6E6E6]/30" placeholder="Fecha y hora de entrega..." />
                </div>
-               <textarea className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium h-32" placeholder="Dedicatoria para la tarjeta (Opcional)..."></textarea>
+               <textarea className="w-full bg-[#3D2852]/50 p-5 rounded-2xl border border-[#5A3F73]/20 outline-none focus:border-[#5A3F73] text-[#E6E6E6] font-medium h-32 placeholder:text-[#E6E6E6]/30" placeholder="Mensaje para la tarjeta (Opcional)..."></textarea>
             </div>
 
             {/* Payment Sim */}
@@ -42,14 +43,40 @@ export default function Checkout() {
                <div className="flex gap-4">
                  {[
                    { label: "Transferencia", icon: "🏦" },
-                   { label: "Tarjeta", icon: "💳" },
-                   { label: "Efectivo", icon: "💵" }
+                   { label: "Tarjeta", icon: "💳" }
                  ].map((p, i) => (
-                   <button key={i} className="flex-1 bg-[#3D2852]/50 p-6 rounded-2xl font-bold text-[#E6E6E6]/60 hover:bg-[#5A3F73] hover:text-white transition-all text-sm flex flex-col items-center gap-2 border border-[#5A3F73]/20">
+                   <button 
+                     key={i} 
+                     onClick={() => setPaymentMethod(p.label)}
+                     className={cn(
+                       "flex-1 p-6 rounded-2xl font-bold transition-all text-sm flex flex-col items-center gap-2 border",
+                       paymentMethod === p.label 
+                         ? "bg-[#5A3F73] text-white border-[#5A3F73] shadow-lg scale-105" 
+                         : "bg-[#3D2852]/50 text-[#E6E6E6]/60 hover:bg-[#5A3F73]/50 border-[#5A3F73]/20 hover:text-white"
+                     )}
+                   >
                      <span className="text-2xl">{p.icon}</span> {p.label}
                    </button>
                  ))}
                </div>
+
+               <AnimatePresence>
+                 {paymentMethod === "Transferencia" && (
+                   <motion.div 
+                     initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                     animate={{ opacity: 1, height: "auto", marginTop: 24 }}
+                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                     className="overflow-hidden"
+                   >
+                     <div className="bg-[#3D2852]/30 border border-dashed border-[#5A3F73] rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-[#3D2852]/50 transition-colors group relative">
+                       <Upload className="w-8 h-8 text-[#5A3F73] mb-3 group-hover:scale-110 transition-transform" />
+                       <span className="text-[#E6E6E6]/80 text-sm font-bold mb-1">Cargar comprobante</span>
+                       <span className="text-[#E6E6E6]/40 text-xs">Arrastra o haz clic para subir captura (PNG, JPG)</span>
+                       <input type="file" title="" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*,.pdf" />
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
             </div>
           </div>
 
@@ -60,24 +87,28 @@ export default function Checkout() {
                 </h3>
                 
                 <div className="space-y-6 mb-10 max-h-[400px] overflow-auto pr-2 custom-scrollbar">
-                  {cartItems.map((item, i) => (
-                    <div key={i} className="flex gap-4 items-center">
-                      <div className="w-20 h-20 rounded-2xl overflow-hidden border border-[#5A3F73]/30 shadow-lg">
-                        <img src={item.image} className="w-full h-full object-cover" />
+                  {items.length === 0 ? (
+                    <p className="text-[#E6E6E6]/40 text-sm text-center py-4">Tu carrito está vacío.</p>
+                  ) : (
+                    items.map((item, i) => (
+                      <div key={i} className="flex gap-4 items-center">
+                        <div className="w-16 h-20 rounded-2xl overflow-hidden border border-[#5A3F73]/30 shadow-lg shrink-0">
+                          <img src={item.product.image} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-[#E6E6E6] text-xs leading-tight">{item.product.name}</h4>
+                          <p className="text-[#5A3F73] font-black text-sm mt-1">{item.product.price}</p>
+                          <p className="text-[9px] uppercase font-bold text-[#E6E6E6]/30 mt-1">Cant: {item.quantity}</p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-[#E6E6E6] text-sm">{item.name}</h4>
-                        <p className="text-[#5A3F73] font-black text-sm">{item.price}</p>
-                        <p className="text-[10px] uppercase font-bold text-[#E6E6E6]/30">Cant: 1</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
 
                 <div className="space-y-4 pt-6 border-t border-[#5A3F73]/20">
                   <div className="flex justify-between text-[#E6E6E6]/40 font-medium">
                     <span>Subtotal</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>${cartTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[#E6E6E6]/40 font-medium">
                     <span>Envío</span>
@@ -85,11 +116,14 @@ export default function Checkout() {
                   </div>
                   <div className="flex justify-between text-2xl font-black text-[#E6E6E6] pt-4">
                     <span className="font-serif">TOTAL</span>
-                    <span className="text-[#5A3F73]">${total.toFixed(2)}</span>
+                    <span className="text-[#5A3F73]">${cartTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
-                <button className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-6 rounded-3xl font-black text-lg transition-all shadow-xl shadow-[#2A1B38] mt-10 active:scale-95 border border-[#E6E6E6]/10">
+                <button 
+                  disabled={items.length === 0}
+                  className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-6 rounded-3xl font-black text-lg transition-all shadow-xl shadow-[#2A1B38] mt-10 active:scale-95 border border-[#E6E6E6]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   CONFIRMAR ORDEN 🌸
                 </button>
                 <p className="text-center text-[10px] text-[#E6E6E6]/20 mt-6 flex items-center justify-center gap-2 font-bold uppercase tracking-widest">

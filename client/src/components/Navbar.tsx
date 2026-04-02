@@ -4,6 +4,7 @@ import { ShoppingBag, Menu, X, MessageSquare, Search, User } from "lucide-react"
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCart } from "@/context/CartContext";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -16,15 +17,16 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { cartItemCount, setIsCartOpen } = useCart();
+
   const leftLinks = [
-    { href: "#ramos", label: "Ramos" },
-    { href: "#desayunos", label: "Desayunos" },
-    { href: "#mas-vendidos", label: "Colecciones" },
+    { href: "#mas-vendidos", label: "Más Vendidos" },
+    { href: "#catalogo", label: "Catálogo" },
   ];
 
   const rightLinks = [
-    { href: "/journal", label: "Journal" },
-    { href: "/contact", label: "Contacto" },
+    { href: "#testimonios", label: "Testimonios" },
+    { href: "#contacto", label: "Contacto" },
   ];
 
   return (
@@ -94,13 +96,13 @@ export function Navbar() {
                 <button className={cn("transition-all hover:scale-110", scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}>
                   <User className="w-4 h-4" strokeWidth={1.5} />
                 </button>
-                <Link href="/checkout" className={cn(
+                <button onClick={() => setIsCartOpen(true)} className={cn(
                   "relative transition-all hover:scale-110 flex items-center gap-2",
                   scrolled ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white"
                 )}>
                   <ShoppingBag className="w-4 h-4" strokeWidth={1.5} />
-                  <span className="text-[10px] font-medium tracking-widest">(2)</span>
-                </Link>
+                  <span className="text-[10px] font-medium tracking-widest">({cartItemCount})</span>
+                </button>
               </div>
             </div>
 
@@ -119,13 +121,15 @@ export function Navbar() {
                <Logo size="sm" variant={scrolled ? "dark" : "light"} />
             </Link>
 
-            <Link href="/checkout" className={cn(
+            <button onClick={() => setIsCartOpen(true)} className={cn(
               "relative p-1 transition-colors",
               scrolled ? "text-foreground" : "text-white"
             )}>
               <ShoppingBag strokeWidth={1.5} />
-              <span className="absolute top-0 right-0 w-3 h-3 bg-accent text-[7px] text-white flex items-center justify-center rounded-full font-black">2</span>
-            </Link>
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-accent text-[8px] text-white flex items-center justify-center rounded-full font-black shadow-sm">{cartItemCount}</span>
+              )}
+            </button>
           </div>
         </div>
 

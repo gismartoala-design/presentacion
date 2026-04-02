@@ -12,6 +12,8 @@ import ProductDetails from "@/pages/ProductDetails";
 import Checkout from "@/pages/Checkout";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
+import { CartProvider } from "@/context/CartContext";
+import { CartSheet } from "@/components/CartSheet";
 
 function Router() {
   return (
@@ -33,20 +35,23 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="relative min-h-screen text-foreground selection:bg-[#5A3F73] selection:text-white">
-        <AnimatePresence>
-          {showIntro ? (
-            <IntroScreen key="intro" onEnter={() => setShowIntro(false)} />
-          ) : (
-            <div key="content" className="relative z-10 transition-opacity duration-1000">
-              {!isV2 && <Navbar />}
-              <Router />
-            </div>
-          )}
-        </AnimatePresence>
-        
-        <Toaster />
-      </div>
+      <CartProvider>
+        <div className="relative min-h-screen text-foreground selection:bg-[#5A3F73] selection:text-white">
+          <AnimatePresence>
+            {showIntro ? (
+              <IntroScreen key="intro" onEnter={() => setShowIntro(false)} />
+            ) : (
+              <div key="content" className="relative z-10 transition-opacity duration-1000">
+                {!isV2 && <Navbar />}
+                <Router />
+              </div>
+            )}
+          </AnimatePresence>
+          
+          <CartSheet />
+          <Toaster />
+        </div>
+      </CartProvider>
     </QueryClientProvider>
   );
 }
