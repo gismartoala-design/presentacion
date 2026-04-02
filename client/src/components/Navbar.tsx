@@ -29,14 +29,9 @@ export function Navbar() {
 
   return (
     <>
-      {/* Top Promo Bar - Very thin, elegant */}
-      <div className="w-full bg-accent text-white py-2 text-center text-[9px] md:text-xs uppercase tracking-[0.3em] font-medium relative z-[60]">
-        Envío sin costo hoy en Guayaquil en pedidos superiores a $50
-      </div>
-
       <nav className={cn(
-        "fixed w-full z-50 transition-all duration-1000",
-        scrolled ? "top-0 bg-white/90 backdrop-blur-3xl border-b border-primary/10 shadow-[0_10px_30px_rgba(0,0,0,0.03)] py-3 lg:py-4" : "top-8 bg-transparent py-6 lg:py-8"
+        "fixed w-full top-0 z-50 transition-all duration-1000",
+        scrolled ? "bg-white/90 backdrop-blur-3xl border-b border-primary/10 shadow-[0_10px_30px_rgba(0,0,0,0.03)] py-3 lg:py-4" : "bg-transparent py-6 lg:py-8"
       )}>
         <div className="container mx-auto px-6 lg:px-12">
           {/* Main Desktop Grid */}
