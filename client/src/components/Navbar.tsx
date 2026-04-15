@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { ShoppingBag, Menu, X, MessageSquare, Search, User } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/Logo";
+import { SearchOverlay } from "@/components/SearchOverlay";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 
@@ -18,6 +19,7 @@ export function Navbar() {
   }, []);
 
   const { cartItemCount, setIsCartOpen } = useCart();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const leftLinks = [
     { href: "#mas-vendidos", label: "Más Vendidos" },
@@ -31,6 +33,7 @@ export function Navbar() {
 
   return (
     <>
+      <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <nav className={cn(
         "fixed w-full top-0 z-50 transition-all duration-1000",
         scrolled ? "bg-white/90 backdrop-blur-3xl border-b border-primary/10 shadow-[0_10px_30px_rgba(0,0,0,0.03)] py-3 lg:py-4" : "bg-transparent py-6 lg:py-8"
@@ -89,17 +92,20 @@ export function Navbar() {
                 </a>
               ))}
 
-              <div className="flex items-center gap-6 border-l pl-8 transition-colors duration-500" style={{ borderLeftColor: (scrolled || location !== "/") ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)' }}>
-                <button className={cn("transition-all hover:scale-110", (scrolled || location !== "/") ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}>
-                  <Search className="w-5 h-5" strokeWidth={1.5} />
+              <div className="flex items-center gap-8 border-l pl-8 transition-colors duration-500" style={{ borderLeftColor: (scrolled || location !== "/") ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.2)' }}>
+                <button 
+                  onClick={() => setIsSearchOpen(true)}
+                  className={cn("transition-all hover:scale-110", (scrolled || location !== "/") ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white")}
+                >
+                  <Search className="w-7 h-7" strokeWidth={2} />
                 </button>
                 <Link href="/checkout">
                   <button className={cn(
                     "relative transition-all hover:scale-110 flex items-center gap-2",
                     (scrolled || location !== "/") ? "text-foreground/80 hover:text-accent" : "text-white/90 hover:text-white"
                   )}>
-                    <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
-                    <span className="text-xs font-medium tracking-widest">({cartItemCount})</span>
+                    <ShoppingBag className="w-7 h-7" strokeWidth={2} />
+                    <span className="text-sm font-black tracking-widest translate-y-[2px]">({cartItemCount})</span>
                   </button>
                 </Link>
               </div>
@@ -113,24 +119,32 @@ export function Navbar() {
               className={cn("p-1 transition-colors", (scrolled || location !== "/") ? "text-foreground" : "text-white")}
               onClick={() => setIsOpen(!isOpen)}
             >
-              <Menu className="w-6 h-6" strokeWidth={1.5} />
+              <Menu className="w-8 h-8" strokeWidth={2} />
             </button>
 
             <Link href="/" className="flex items-center absolute left-1/2 -translate-x-1/2">
                <Logo size="sm" variant={(scrolled || location !== "/") ? "dark" : "light"} />
             </Link>
 
-            <Link href="/checkout">
-              <button className={cn(
-                "relative p-1 transition-colors hover:scale-110",
-                (scrolled || location !== "/") ? "text-foreground" : "text-white"
-              )}>
-                <ShoppingBag className="w-6 h-6" strokeWidth={1.5} />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-[9px] text-white flex items-center justify-center rounded-full font-black shadow-sm">{cartItemCount}</span>
-                )}
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsSearchOpen(true)}
+                className={cn("p-1 transition-colors", (scrolled || location !== "/") ? "text-foreground" : "text-white")}
+              >
+                <Search className="w-7 h-7" strokeWidth={2} />
               </button>
-            </Link>
+              <Link href="/checkout">
+                <button className={cn(
+                  "relative p-1 transition-colors hover:scale-110",
+                  (scrolled || location !== "/") ? "text-foreground" : "text-white"
+                )}>
+                  <ShoppingBag className="w-7 h-7" strokeWidth={2} />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-[10px] text-white flex items-center justify-center rounded-full font-black shadow-lg border-2 border-[#fff]">{cartItemCount}</span>
+                  )}
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
 
