@@ -96,7 +96,7 @@ export function AdminRecentOrders({ orders }: AdminRecentOrdersProps) {
                 </div>
                 <div className="text-right">
                   <div className="text-lg font-semibold">
-                    ${order.totalAmount.toFixed(2)}
+                    ${(order.totalAmount ?? 0).toFixed(2)}
                   </div>
                   <div className="text-sm text-muted-foreground">Total</div>
                 </div>
