@@ -76,3 +76,7 @@
 .nav-link-hover {
   @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all hover:after:w-full;
 }
+
+#root {
+  padding: 0;
+}
