@@ -4,6 +4,7 @@ import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { useCompany } from "@/hooks/useCompany";
 
 import { CartDialog } from "@/components/CartDialog";
 import { Seo } from "@/components/Seo";
@@ -22,6 +23,7 @@ type OrderStatus = "idle" | "loading" | "success" | "error";
 export default function Checkout() {
   const { items, cartTotal, clearCart, updateQuantity, removeItem, isCartOpen, setIsCartOpen } = useCart();
   const [, setLocation] = useLocation();
+  const { data: company } = useCompany();
   const [paymentMethod, setPaymentMethod] = useState("Transferencia");
   const [sector, setSector] = useState(SECTORS[0]);
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
@@ -35,7 +37,13 @@ export default function Checkout() {
     type: string;
   } | null>(null);
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofMessage, setProofMessage] = useState("");
   const payphoneBoxStorageKey = "pp_box_payload";
+  const transferInstructions =
+    company?.settings?.paymentSettings?.transferInstructions ||
+    "Banco: Banco del Pichincha\nCuenta: 2205748975\nTitular: DIFIORI";
 
   // Form refs
   const receiverNameRef = useRef<HTMLInputElement>(null);
@@ -198,6 +206,41 @@ export default function Checkout() {
     }
   };
 
+  const uploadPaymentProof = async () => {
+    if (!orderNumber || !selectedProofFile) {
+      setProofMessage("Selecciona una imagen del comprobante antes de subir.");
+      return;
+    }
+
+    setIsUploadingProof(true);
+    setProofMessage("");
+
+    try {
+      const dataUrl = await readFileAsDataUrl(selectedProofFile);
+      const response = await fetch(`/api/external/store-orders/${encodeURIComponent(orderNumber)}/payment-proof`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: selectedProofFile.name,
+          mimeType: selectedProofFile.type,
+          dataUrl,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.status !== "success") {
+        throw new Error(data.message || "No se pudo subir el comprobante");
+      }
+
+      setProofMessage("Comprobante subido. El equipo lo revisará desde el admin.");
+      setSelectedProofFile(null);
+    } catch (error) {
+      setProofMessage(error instanceof Error ? error.message : "No se pudo subir el comprobante");
+    } finally {
+      setIsUploadingProof(false);
+    }
+  };
+
   // Pantalla de éxito
   if (orderStatus === "success") {
     return (
@@ -227,11 +270,25 @@ export default function Checkout() {
           </p>
           {paymentMethod === "Transferencia" && (
             <div className="bg-[#5A3F73]/20 border border-dashed border-[#5A3F73] rounded-2xl p-6 mb-8 text-left">
-              <p className="text-[#E6E6E6]/80 text-sm font-bold mb-2">📌 Recuerda realizar la transferencia:</p>
-              <p className="text-[#E6E6E6]/60 text-xs">Banco: Banco del Pichincha</p>
-              <p className="text-[#E6E6E6]/60 text-xs">Cta: 2205748975</p>
-              <p className="text-[#E6E6E6]/60 text-xs">Titular: DIFIORI</p>
-              <p className="text-[#E6E6E6]/60 text-xs mt-2">Envía el comprobante por WhatsApp.</p>
+              <p className="text-[#E6E6E6]/80 text-sm font-bold mb-2">📌 Instrucciones de transferencia:</p>
+              <pre className="whitespace-pre-wrap text-[#E6E6E6]/60 text-xs font-sans">{transferInstructions}</pre>
+              <p className="text-[#E6E6E6]/60 text-xs mt-4 mb-2">Sube aquí tu comprobante para que aparezca en el panel admin:</p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setSelectedProofFile(e.target.files?.[0] || null)}
+                className="block w-full text-xs text-[#E6E6E6]/70 file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
+              />
+              <button
+                onClick={uploadPaymentProof}
+                disabled={!selectedProofFile || isUploadingProof}
+                className="mt-4 w-full bg-[#5A3F73] hover:bg-[#4A3362] disabled:opacity-50 text-white py-3 rounded-2xl font-black text-sm transition-all"
+              >
+                {isUploadingProof ? "Subiendo comprobante..." : "Subir comprobante"}
+              </button>
+              {proofMessage && (
+                <p className="text-[#E6E6E6]/70 text-xs mt-3">{proofMessage}</p>
+              )}
             </div>
           )}
           <Link href="/">
@@ -334,13 +391,8 @@ export default function Checkout() {
                    >
                      <div className="bg-[#3D2852]/30 border border-dashed border-[#5A3F73] rounded-2xl p-8">
                        <p className="text-[#E6E6E6]/80 text-sm font-bold mb-4">📌 Datos para la transferencia:</p>
-                       <div className="space-y-2 text-sm text-[#E6E6E6]/70">
-                         <p><span className="font-bold text-[#E6E6E6]/90">Banco:</span> Banco del Pichincha</p>
-                         <p><span className="font-bold text-[#E6E6E6]/90">Cuenta:</span> 2205748975</p>
-                         <p><span className="font-bold text-[#E6E6E6]/90">Tipo:</span> Corriente</p>
-                         <p><span className="font-bold text-[#E6E6E6]/90">Titular:</span> DIFIORI</p>
-                       </div>
-                       <p className="text-[#E6E6E6]/40 text-xs mt-4">Envía el comprobante al WhatsApp después de confirmar.</p>
+                       <pre className="whitespace-pre-wrap text-sm text-[#E6E6E6]/70 font-sans">{transferInstructions}</pre>
+                       <p className="text-[#E6E6E6]/40 text-xs mt-4">Después de confirmar podrás subir el comprobante y quedará visible en el admin.</p>
                      </div>
                    </motion.div>
                  )}
@@ -499,4 +551,13 @@ export default function Checkout() {
       </div>
     </div>
   );
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo seleccionado."));
+    reader.readAsDataURL(file);
+  });
 }

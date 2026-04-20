@@ -265,6 +265,13 @@ model Order {
   couponDiscountCode                             String?
   payPhoneAuthCode                               String?
   payPhoneTransactionId                          String?
+  paymentProofImageUrl                           String?
+  paymentProofFileName                           String?
+  paymentProofStatus                             String?     @default("PENDING")
+  paymentProofUploadedAt                         DateTime?
+  paymentVerifiedAt                              DateTime?
+  paymentVerifiedBy                              String?
+  paymentVerificationNotes                       String?
   orderItems                                     OrderItem[]
   discounts_orders_discount_code_idTodiscounts   discounts?  @relation("orders_discount_code_idTodiscounts", fields: [discount_code_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_code_discount_fk")
   discounts_orders_discount_coupon_idTodiscounts discounts?  @relation("orders_discount_coupon_idTodiscounts", fields: [discount_coupon_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "orders_coupon_discount_fk")

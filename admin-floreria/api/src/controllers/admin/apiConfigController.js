@@ -1,6 +1,20 @@
 const crypto = require("crypto");
 const { db: prisma } = require("../../lib/prisma");
 
+async function getCompanyForAdmin(adminId) {
+  if (!adminId) return null;
+
+  return prisma.company.findFirst({
+    where: {
+      users: {
+        some: {
+          id: adminId,
+        },
+      },
+    },
+  });
+}
+
 /**
  * Generar nueva API Key para la empresa
  * POST /api/admin/company/api-key
@@ -15,7 +29,7 @@ const generateApiKey = async (req, res) => {
         id: companyId,
         users: {
           some: {
-            id: req.user.id // Del authMiddleware
+            id: req.user.adminId // Del authMiddleware
           }
         }
       }
@@ -75,7 +89,7 @@ const generateWebhookSecret = async (req, res) => {
         id: companyId,
         users: {
           some: {
-            id: req.user.id
+            id: req.user.adminId
           }
         }
       }
@@ -142,7 +156,7 @@ const updateAllowedDomains = async (req, res) => {
         id: companyId,
         users: {
           some: {
-            id: req.user.id
+            id: req.user.adminId
           }
         }
       }
@@ -198,7 +212,7 @@ const getApiConfig = async (req, res) => {
         id: companyId,
         users: {
           some: {
-            id: req.user.id
+            id: req.user.adminId
           }
         }
       },
@@ -247,7 +261,7 @@ const getApiLogs = async (req, res) => {
         id: companyId,
         users: {
           some: {
-            id: req.user.id
+            id: req.user.adminId
           }
         }
       }
@@ -325,10 +339,91 @@ const getApiLogs = async (req, res) => {
   }
 };
 
+const getPaymentSettings = async (req, res) => {
+  try {
+    const company = await getCompanyForAdmin(req.user?.adminId);
+
+    if (!company) {
+      return res.status(404).json({
+        status: "error",
+        message: "Empresa no encontrada para este usuario.",
+      });
+    }
+
+    return res.json({
+      status: "success",
+      data: {
+        companyId: company.id,
+        companyName: company.name,
+        settings: company.settings || {},
+      },
+    });
+  } catch (error) {
+    console.error("Error getting payment settings:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al obtener la configuración de pagos.",
+    });
+  }
+};
+
+const updatePaymentSettings = async (req, res) => {
+  try {
+    const company = await getCompanyForAdmin(req.user?.adminId);
+
+    if (!company) {
+      return res.status(404).json({
+        status: "error",
+        message: "Empresa no encontrada para este usuario.",
+      });
+    }
+
+    const currentSettings = company.settings && typeof company.settings === "object"
+      ? company.settings
+      : {};
+
+    const paymentSettings = req.body && typeof req.body === "object" ? req.body : {};
+    const mergedSettings = {
+      ...currentSettings,
+      paymentSettings,
+    };
+
+    const updatedCompany = await prisma.company.update({
+      where: { id: company.id },
+      data: {
+        settings: mergedSettings,
+      },
+      select: {
+        id: true,
+        name: true,
+        settings: true,
+      },
+    });
+
+    return res.json({
+      status: "success",
+      message: "Configuración de pagos actualizada.",
+      data: {
+        companyId: updatedCompany.id,
+        companyName: updatedCompany.name,
+        settings: updatedCompany.settings || {},
+      },
+    });
+  } catch (error) {
+    console.error("Error updating payment settings:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Error al guardar la configuración de pagos.",
+    });
+  }
+};
+
 module.exports = {
   generateApiKey,
   generateWebhookSecret,
   updateAllowedDomains,
   getApiConfig,
-  getApiLogs
+  getApiLogs,
+  getPaymentSettings,
+  updatePaymentSettings,
 };

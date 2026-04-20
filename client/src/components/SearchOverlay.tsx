@@ -25,13 +25,32 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
   // Bloquear scroll cuando está abierto
   useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
       setQuery("");
     }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleSelectProduct = (productPath: string) => {
     onClose();
