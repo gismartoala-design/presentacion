@@ -8,6 +8,15 @@ import {
   CheckCircle,
   Loader2,
   ArrowRight,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  MessageSquare,
+  FileText,
+  Landmark,
+  Smartphone,
+  Globe2,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,23 +27,69 @@ import { useCompany } from "@/hooks/useCompany";
 import { CartDialog } from "@/components/CartDialog";
 import { Seo } from "@/components/Seo";
 
-const SECTORS = [
-  { name: "Norte (Urdesa, Alborada, Sauces)", price: 0 },
-  { name: "Centro / Sur", price: 3 },
-  { name: "Ceibos / Los Olivos", price: 4 },
-  { name: "Vía a la Costa", price: 5 },
-  { name: "Samborondón / Vía a Salitre", price: 5 },
-  { name: "Durán", price: 6 },
+type OrderStatus = "idle" | "loading" | "success" | "error";
+type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
+type CheckoutStep = "sender" | "receiver" | "payment";
+
+const CHECKOUT_STEPS: {
+  id: CheckoutStep;
+  label: string;
+  helper: string;
+  Icon: typeof User;
+}[] = [
+  {
+    id: "sender",
+    label: "Tus datos",
+    helper: "Quién envía",
+    Icon: User,
+  },
+  {
+    id: "receiver",
+    label: "Entrega",
+    helper: "Quién recibe",
+    Icon: Truck,
+  },
+  {
+    id: "payment",
+    label: "Pago",
+    helper: "Confirmación",
+    Icon: CreditCard,
+  },
 ];
 
-type OrderStatus = "idle" | "loading" | "success" | "error";
+const PAYMENT_METHODS: {
+  label: PaymentMethod;
+  description: string;
+  Icon: typeof CreditCard;
+}[] = [
+  {
+    label: "PayPal",
+    description: "Pago internacional o con tarjeta de crédito",
+    Icon: Globe2,
+  },
+  {
+    label: "Payphone",
+    description: "Pago local con tarjeta desde la pasarela segura",
+    Icon: Smartphone,
+  },
+  {
+    label: "Banco",
+    description: "Transferencia bancaria con comprobante",
+    Icon: Landmark,
+  },
+  {
+    label: "Zelle",
+    description: "Pago por Zelle; el vendedor confirmará los datos",
+    Icon: CreditCard,
+  },
+];
 
 export default function Checkout() {
   const { items, cartTotal, clearCart, setIsCartOpen } = useCart();
   const [, setLocation] = useLocation();
   const { data: company } = useCompany();
-  const [paymentMethod, setPaymentMethod] = useState("Transferencia");
-  const [sector, setSector] = useState(SECTORS[0]);
+  const [activeStep, setActiveStep] = useState<CheckoutStep>("sender");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Banco");
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
   const [orderNumber, setOrderNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -55,46 +110,86 @@ export default function Checkout() {
     "Banco: Banco del Pichincha\nCuenta: 2205748975\nTitular: DIFIORI";
 
   const receiverNameRef = useRef<HTMLInputElement>(null);
+  const receiverPhoneRef = useRef<HTMLInputElement>(null);
   const senderNameRef = useRef<HTMLInputElement>(null);
-  const phoneRef = useRef<HTMLInputElement>(null);
+  const senderEmailRef = useRef<HTMLInputElement>(null);
+  const senderPhoneRef = useRef<HTMLInputElement>(null);
   const dateTimeRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const cardMessageRef = useRef<HTMLTextAreaElement>(null);
+  const observationsRef = useRef<HTMLTextAreaElement>(null);
 
   const abandonmentSent = useRef(false);
 
+  const readCheckoutFields = () => {
+    const senderName = senderNameRef.current?.value.trim() || "";
+    const senderEmail = senderEmailRef.current?.value.trim() || "";
+    const senderPhone = senderPhoneRef.current?.value.trim() || "";
+    const receiverName = receiverNameRef.current?.value.trim() || "";
+    const receiverPhone = receiverPhoneRef.current?.value.trim() || "";
+    const deliveryDateTime = dateTimeRef.current?.value.trim() || "";
+    const address = addressRef.current?.value.trim() || "";
+    const cardMessage = cardMessageRef.current?.value.trim() || "";
+    const observations = observationsRef.current?.value.trim() || "";
+    return {
+      senderName,
+      senderEmail,
+      senderPhone,
+      receiverName,
+      receiverPhone,
+      deliveryDateTime,
+      address,
+      exactAddress: address,
+      cardMessage,
+      observations,
+    };
+  };
+
   useEffect(() => {
     const handleAbandonment = () => {
-      if (abandonmentSent.current || orderStatus === "success" || items.length === 0) return;
+      if (
+        abandonmentSent.current ||
+        orderStatus === "success" ||
+        items.length === 0
+      )
+        return;
 
-      const customerName = senderNameRef.current?.value;
-      const phone = phoneRef.current?.value;
-      const receiverName = receiverNameRef.current?.value;
-      const deliveryDateTime = dateTimeRef.current?.value;
-      const exactAddress = addressRef.current?.value;
-      const cardMessage = cardMessageRef.current?.value;
+      const {
+        senderName,
+        senderEmail,
+        senderPhone,
+        receiverName,
+        receiverPhone,
+        deliveryDateTime,
+        exactAddress,
+        cardMessage,
+        observations,
+      } = readCheckoutFields();
 
-      if (customerName || phone) {
+      if (senderName || senderPhone) {
         fetch("/api/external/store-orders/abandoned", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            customerName: customerName || "Cliente anónimo",
-            phone: phone || "No proporcionado",
-            senderName: customerName || "",
+            customerName: senderName || "Cliente anónimo",
+            phone: senderPhone || "No proporcionado",
+            senderName: senderName || "",
+            senderEmail: senderEmail || "",
+            senderPhone: senderPhone || "",
             receiverName: receiverName || "",
+            receiverPhone: receiverPhone || "",
             exactAddress: exactAddress || "",
-            sector: sector.name,
+            sector: exactAddress || "Guayaquil",
             paymentMethod,
             deliveryDateTime: deliveryDateTime || "",
             cardMessage: cardMessage || "",
+            observations: observations || "",
             couponCode: appliedCoupon?.code || "",
             abandonedAt: new Date().toISOString(),
             source: "CHECKOUT_WEB",
             items,
             total:
-              cartTotal +
-              sector.price -
+              cartTotal -
               (appliedCoupon
                 ? appliedCoupon.type === "PERCENTAGE"
                   ? cartTotal * appliedCoupon.percent_value
@@ -114,10 +209,13 @@ export default function Checkout() {
       clearTimeout(timer);
       window.removeEventListener("beforeunload", handleAbandonment);
     };
-  }, [items, orderStatus, sector.name, paymentMethod, appliedCoupon, cartTotal]);
+  }, [items, orderStatus, paymentMethod, appliedCoupon, cartTotal]);
 
   const cartSubtotal = cartTotal;
-  const shippingCost = sector.price;
+  const shippingCost = 0;
+  const activeStepIndex = CHECKOUT_STEPS.findIndex(
+    (step) => step.id === activeStep,
+  );
 
   let discountAmount = 0;
   if (appliedCoupon) {
@@ -130,17 +228,101 @@ export default function Checkout() {
 
   const finalTotal = cartSubtotal + shippingCost - discountAmount;
 
+  const getMissingSenderFields = () => {
+    const { senderName, senderEmail, senderPhone } = readCheckoutFields();
+    return [
+      [senderName, "nombre de quien envía"],
+      [senderEmail, "correo de quien envía"],
+      [senderPhone, "teléfono de quien envía"],
+    ]
+      .filter(([value]) => !value)
+      .map(([, label]) => label);
+  };
+
+  const getMissingReceiverFields = () => {
+    const {
+      receiverName,
+      receiverPhone,
+      address,
+      cardMessage,
+      deliveryDateTime,
+    } = readCheckoutFields();
+    return [
+      [receiverName, "nombre de quien recibe"],
+      [receiverPhone, "teléfono de quien recibe"],
+      [address, "dirección exacta"],
+      [cardMessage, "mensaje para la tarjeta"],
+      [deliveryDateTime, "hora de entrega"],
+    ]
+      .filter(([value]) => !value)
+      .map(([, label]) => label);
+  };
+
+  const validateSenderStep = () => {
+    const { senderEmail } = readCheckoutFields();
+    const missingFields = getMissingSenderFields();
+
+    if (missingFields.length > 0) {
+      setActiveStep("sender");
+      setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
+      return false;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
+      setActiveStep("sender");
+      setErrorMsg("Ingresa un correo válido para quien envía.");
+      return false;
+    }
+
+    setErrorMsg("");
+    return true;
+  };
+
+  const validateReceiverStep = () => {
+    const missingFields = getMissingReceiverFields();
+
+    if (missingFields.length > 0) {
+      setActiveStep("receiver");
+      setErrorMsg(`Completa: ${missingFields.join(", ")}.`);
+      return false;
+    }
+
+    setErrorMsg("");
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (activeStep === "sender") {
+      if (validateSenderStep()) setActiveStep("receiver");
+      return;
+    }
+
+    if (activeStep === "receiver") {
+      if (validateReceiverStep()) setActiveStep("payment");
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (activeStep === "receiver") setActiveStep("sender");
+    if (activeStep === "payment") setActiveStep("receiver");
+    setErrorMsg("");
+  };
+
   const handleValidateCoupon = async () => {
     if (!couponCode) return;
     setIsValidatingCoupon(true);
     setErrorMsg("");
     try {
-      const res = await fetch(`/api/checkout/get-coupon-discount?code=${couponCode}`);
+      const res = await fetch(
+        `/api/checkout/get-coupon-discount?code=${couponCode}`,
+      );
       const data = await res.json();
       if (res.ok && data.status === "success") {
         const coupon = data.data;
         if (coupon.minAmount && cartSubtotal < coupon.minAmount) {
-          setErrorMsg(`El cupón requiere una compra mínima de $${coupon.minAmount}`);
+          setErrorMsg(
+            `El cupón requiere una compra mínima de $${coupon.minAmount}`,
+          );
           setAppliedCoupon(null);
         } else {
           setAppliedCoupon(coupon);
@@ -157,17 +339,20 @@ export default function Checkout() {
   };
 
   const handleConfirmOrder = async () => {
-    const receiverName = receiverNameRef.current?.value || "";
-    const senderName = senderNameRef.current?.value || "";
-    const phone = phoneRef.current?.value || "";
-    const deliveryDateTime = dateTimeRef.current?.value || "";
-    const exactAddress = addressRef.current?.value || "";
-    const cardMessage = cardMessageRef.current?.value || "";
+    const {
+      senderName,
+      senderEmail,
+      senderPhone,
+      receiverName,
+      receiverPhone,
+      deliveryDateTime,
+      address,
+      exactAddress,
+      cardMessage,
+      observations,
+    } = readCheckoutFields();
 
-    if (!receiverName || !senderName || !phone) {
-      setErrorMsg("Por favor completa: nombre de quien recibe, quien envía y celular.");
-      return;
-    }
+    if (!validateSenderStep() || !validateReceiverStep()) return;
 
     setErrorMsg("");
     setOrderStatus("loading");
@@ -181,18 +366,22 @@ export default function Checkout() {
       quantity: firstItem?.quantity || 1,
       receiverName,
       senderName,
-      phone,
+      senderEmail,
+      senderPhone,
+      receiverPhone,
+      phone: senderPhone,
       deliveryDateTime,
       exactAddress,
-      sector: sector.name,
-      shippingCost: sector.price,
+      sector: address,
+      shippingCost,
       cardMessage,
+      observations,
       total: cartSubtotal + shippingCost,
       couponCode: appliedCoupon?.code || null,
     };
 
     try {
-      if (paymentMethod === "Tarjeta") {
+      if (paymentMethod === "Payphone") {
         localStorage.setItem(
           payphoneBoxStorageKey,
           JSON.stringify({
@@ -218,12 +407,17 @@ export default function Checkout() {
         setOrderStatus("success");
         clearCart();
       } else {
-        setErrorMsg(data.message || "Hubo un error al procesar tu orden. Contáctanos por WhatsApp.");
+        setErrorMsg(
+          data.message ||
+            "Hubo un error al procesar tu orden. Contáctanos por WhatsApp.",
+        );
         setOrderStatus("error");
         abandonmentSent.current = false;
       }
     } catch {
-      setErrorMsg("No se pudo conectar con el servidor. Contáctanos por WhatsApp.");
+      setErrorMsg(
+        "No se pudo conectar con el servidor. Contáctanos por WhatsApp.",
+      );
       setOrderStatus("error");
       abandonmentSent.current = false;
     }
@@ -240,25 +434,34 @@ export default function Checkout() {
 
     try {
       const dataUrl = await readFileAsDataUrl(selectedProofFile);
-      const response = await fetch(`/api/external/store-orders/${encodeURIComponent(orderNumber)}/payment-proof`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: selectedProofFile.name,
-          mimeType: selectedProofFile.type,
-          dataUrl,
-        }),
-      });
+      const response = await fetch(
+        `/api/external/store-orders/${encodeURIComponent(orderNumber)}/payment-proof`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: selectedProofFile.name,
+            mimeType: selectedProofFile.type,
+            dataUrl,
+          }),
+        },
+      );
 
       const data = await response.json();
       if (!response.ok || data.status !== "success") {
         throw new Error(data.message || "No se pudo subir el comprobante");
       }
 
-      setProofMessage("Comprobante subido. El equipo lo revisará desde el admin.");
+      setProofMessage(
+        "Comprobante subido. El equipo lo revisará desde el admin.",
+      );
       setSelectedProofFile(null);
     } catch (error) {
-      setProofMessage(error instanceof Error ? error.message : "No se pudo subir el comprobante");
+      setProofMessage(
+        error instanceof Error
+          ? error.message
+          : "No se pudo subir el comprobante",
+      );
     } finally {
       setIsUploadingProof(false);
     }
@@ -266,7 +469,7 @@ export default function Checkout() {
 
   if (orderStatus === "success") {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,#f6eef8_0%,#efe3f3_45%,#e6d6ec_100%)] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
         <Seo
           title="Checkout | DIFIORI"
           description="Proceso de checkout de DIFIORI."
@@ -276,7 +479,7 @@ export default function Checkout() {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#2A1B38]/80 backdrop-blur-3xl p-14 rounded-[3rem] shadow-2xl border-2 border-[#5A3F73]/40 text-center max-w-lg w-full"
+          className="bg-white p-8 rounded-[2rem] shadow-2xl border border-[#E5D7EF] text-center max-w-lg w-full sm:p-12"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -285,32 +488,53 @@ export default function Checkout() {
           >
             <CheckCircle className="w-24 h-24 text-green-400 mx-auto mb-6" />
           </motion.div>
-          <h2 className="text-3xl font-serif font-bold text-[#E6E6E6] mb-3">¡Orden confirmada!</h2>
-          <p className="text-[#5A3F73] font-black text-lg mb-2">{orderNumber}</p>
-          <p className="text-[#E6E6E6]/60 text-sm mb-8">
-            Hemos recibido tu pedido. Nuestro equipo se pondrá en contacto contigo pronto para coordinar la entrega.
+          <h2 className="text-3xl font-serif font-bold text-[#4A3362] mb-3">
+            ¡Orden confirmada!
+          </h2>
+          <p className="text-[#5A3F73] font-black text-lg mb-2">
+            {orderNumber}
           </p>
-          {paymentMethod === "Transferencia" && (
-            <div className="bg-[#5A3F73]/20 border border-dashed border-[#5A3F73] rounded-2xl p-6 mb-8 text-left">
-              <p className="text-[#E6E6E6]/80 text-sm font-bold mb-2">Instrucciones de transferencia:</p>
-              <pre className="whitespace-pre-wrap text-[#E6E6E6]/60 text-xs font-sans">{transferInstructions}</pre>
-              <p className="text-[#E6E6E6]/60 text-xs mt-4 mb-2">
+          <p className="text-[#5A3F73] text-base font-semibold mb-8">
+            Hemos recibido tu pedido. El vendedor se pondrá en contacto contigo.
+            Esperamos tu respuesta.
+          </p>
+          {(paymentMethod === "Banco" || paymentMethod === "Zelle") && (
+            <div className="bg-[#FBF7FD] border border-dashed border-[#B58CCC] rounded-2xl p-6 mb-8 text-left">
+              <p className="text-[#4A3362] text-sm font-bold mb-2">
+                {paymentMethod === "Banco" ? "Instrucciones de transferencia:" : "Pago por Zelle:"}
+              </p>
+              {paymentMethod === "Banco" ? (
+                <pre className="whitespace-pre-wrap text-[#5A3F73] text-sm font-sans">
+                  {transferInstructions}
+                </pre>
+              ) : (
+                <p className="text-[#5A3F73] text-sm">
+                  El vendedor confirmará los datos de Zelle y validará el pago con tu comprobante.
+                </p>
+              )}
+              <p className="text-[#6B5487] text-xs mt-4 mb-2">
                 Sube aquí tu comprobante para que aparezca en el panel admin:
               </p>
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setSelectedProofFile(e.target.files?.[0] || null)}
-                className="block w-full text-xs text-[#E6E6E6]/70 file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
+                onChange={(e) =>
+                  setSelectedProofFile(e.target.files?.[0] || null)
+                }
+                className="block w-full text-xs text-[#5A3F73] file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
               />
               <button
                 onClick={uploadPaymentProof}
                 disabled={!selectedProofFile || isUploadingProof}
                 className="mt-4 w-full bg-[#5A3F73] hover:bg-[#4A3362] disabled:opacity-50 text-white py-3 rounded-2xl font-black text-sm transition-all"
               >
-                {isUploadingProof ? "Subiendo comprobante..." : "Subir comprobante"}
+                {isUploadingProof
+                  ? "Subiendo comprobante..."
+                  : "Subir comprobante"}
               </button>
-              {proofMessage && <p className="text-[#E6E6E6]/70 text-xs mt-3">{proofMessage}</p>}
+              {proofMessage && (
+                <p className="text-[#5A3F73] text-xs mt-3">{proofMessage}</p>
+              )}
             </div>
           )}
           <Link href="/">
@@ -324,7 +548,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="checkout-shell min-h-screen bg-[radial-gradient(circle_at_top,#faf3fb_0%,#f3e8f5_42%,#e9dced_100%)] pt-32 pb-20 px-6">
+    <div className="checkout-shell min-h-screen bg-white pt-16 pb-20 px-4 sm:px-6">
       <Seo
         title="Checkout | DIFIORI"
         description="Proceso de checkout de DIFIORI."
@@ -332,288 +556,521 @@ export default function Checkout() {
         robots="noindex, nofollow"
       />
       <CartDialog />
-      <div className="container relative mx-auto max-w-5xl">
-        <div className="mb-16 flex flex-col items-center text-center">
+      <div className="container relative mx-auto max-w-6xl">
+        <div className="mb-10 flex flex-col items-center text-center">
           <Link
             href="/#catalogo"
-            className="group mb-6 inline-flex items-center gap-2 font-bold text-[#6B5487] transition-colors hover:text-[#4A3362]"
+            className="group mb-5 inline-flex items-center gap-2 font-bold text-[#6B5487] transition-colors hover:text-[#4A3362]"
           >
             <ChevronLeft className="h-5 w-5 transition-transform group-hover:translate-x-[-5px]" />
             Seguir comprando
           </Link>
 
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsCartOpen(true)}
-            className="checkout-panel relative cursor-pointer rounded-[3.5rem] border-2 px-12 py-8 flex flex-col items-center group"
-          >
-            <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-transparent via-[#B58CCC] to-transparent opacity-70" />
-            <ShoppingBag className="mb-4 h-12 w-12 text-[#5A3F73] transition-transform group-hover:scale-110" />
-            <h2 className="mb-1 text-3xl font-serif font-bold text-[#4A3362]">
-              {items.length === 0
-                ? "Tu carrito está vacío"
-                : `Tienes ${items.length} ${items.length === 1 ? "producto" : "productos"}`}
-            </h2>
-            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#7A5B93]">
-              Haz clic para ver/cambiar tu pedido <ArrowRight className="h-3 w-3" />
-            </p>
-            {items.length > 0 && (
-              <div className="absolute right-8 top-6 flex h-6 w-6 items-center justify-center rounded-full bg-[#5A3F73] text-[10px] font-black text-white shadow-lg">
-                {items.reduce((acc, item) => acc + item.quantity, 0)}
-              </div>
-            )}
-          </motion.div>
+          <h1 className="text-4xl font-serif font-bold text-[#4A3362] sm:text-5xl">
+            Finaliza tu pedido
+          </h1>
         </div>
 
-        <div className="flex flex-col gap-16 lg:flex-row">
-          <div className="flex-1 space-y-10">
-            <div className="checkout-panel rounded-[3rem] p-10 space-y-8">
-              <h3 className="flex items-center gap-3 text-xl font-bold text-[#5A3F73]">
-                <User className="h-6 w-6" /> DATOS DE ENTREGA
-              </h3>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <input
-                  ref={receiverNameRef}
-                  className="checkout-input"
-                  placeholder="Nombre de quien RECIBE *"
-                />
-                <input
-                  ref={senderNameRef}
-                  className="checkout-input"
-                  placeholder="Nombre de quien ENVÍA *"
-                />
-                <input
-                  ref={phoneRef}
-                  type="tel"
-                  className="checkout-input"
-                  placeholder="Celular (Para confirmaciones) *"
-                />
-                <input
-                  ref={dateTimeRef}
-                  type="datetime-local"
-                  className="checkout-input [color-scheme:light]"
-                />
-                <input
-                  ref={addressRef}
-                  className="checkout-input md:col-span-2"
-                  placeholder="Dirección exacta (Ciudadela, Manzana, Villa)..."
-                />
-              </div>
-              <textarea
-                ref={cardMessageRef}
-                className="checkout-input h-32 resize-none"
-                placeholder="Mensaje para la tarjeta (Opcional)..."
-              />
-            </div>
+        <div className="mb-8 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-[#E5D7EF] bg-white p-2 shadow-[0_12px_32px_rgba(74,51,98,0.08)]">
+          {CHECKOUT_STEPS.map((step, index) => {
+            const isActive = step.id === activeStep;
+            const isComplete = index < activeStepIndex;
+            const StepIcon = step.Icon;
 
-            <div className="checkout-panel rounded-[3rem] p-10 space-y-8">
-              <h3 className="flex items-center gap-3 text-xl font-bold text-[#5A3F73]">
-                <CreditCard className="h-6 w-6" /> MÉTODO DE PAGO
-              </h3>
-              <div className="flex gap-4">
-                {[
-                  { label: "Transferencia", icon: "🏦" },
-                  { label: "Tarjeta", icon: "💳" },
-                ].map((p, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPaymentMethod(p.label)}
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => {
+                  setActiveStep(step.id);
+                  setErrorMsg("");
+                }}
+                className={cn(
+                  "flex min-h-[78px] flex-col items-center justify-center gap-1 rounded-[1.15rem] px-2 text-center transition-all sm:flex-row sm:gap-3 sm:text-left",
+                  isActive
+                    ? "bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
+                    : "bg-white text-[#6B5487] hover:bg-[#FBF7FD]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black",
+                    isActive
+                      ? "border-white/40 bg-white/15 text-white"
+                      : isComplete
+                        ? "border-[#5A3F73] bg-[#5A3F73] text-white"
+                        : "border-[#DCC5E8] bg-[#FBF7FD] text-[#5A3F73]",
+                  )}
+                >
+                  {isComplete ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <StepIcon className="h-4 w-4" />
+                  )}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-black sm:text-base">
+                    {step.label}
+                  </span>
+                  <span
                     className={cn(
-                      "flex-1 rounded-2xl border p-6 text-sm font-bold transition-all flex flex-col items-center gap-2",
-                      paymentMethod === p.label
-                        ? "scale-105 border-[#5A3F73] bg-[#5A3F73] text-white shadow-lg"
-                        : "border-[#CDAFDE]/50 bg-white/55 text-[#6B5487] hover:bg-[#F0E2F7] hover:text-[#4A3362]",
+                      "hidden text-xs font-bold sm:block",
+                      isActive ? "text-white/75" : "text-[#8D73A6]",
                     )}
                   >
-                    <span className="text-2xl">{p.icon}</span>
-                    {p.label}
+                    {step.helper}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-start">
+          <aside className="order-2 checkout-panel rounded-[2rem] p-6 lg:sticky lg:order-2">
+            <div className="space-y-6">
+              <div>
+                <div className="mb-4 flex items-center justify-between gap-4">
+                  <h3 className="flex items-center gap-3 text-2xl font-serif font-bold uppercase tracking-wide text-[#4A3362] underline decoration-[#CDAFDE] decoration-4 underline-offset-4">
+                    <ShoppingBag className="h-6 w-6" /> Resumen
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsCartOpen(true)}
+                    className="shrink-0 rounded-full border border-[#DCC5E8] bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-[#5A3F73] transition-all hover:bg-[#FBF7FD]"
+                  >
+                    Ver / cambiar
                   </button>
-                ))}
-              </div>
-
-              <AnimatePresence>
-                {paymentMethod === "Transferencia" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 24 }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="checkout-subpanel rounded-2xl border border-dashed border-[#B58CCC] p-8">
-                      <p className="mb-4 text-sm font-bold text-[#4A3362]">Datos para la transferencia:</p>
-                      <pre className="whitespace-pre-wrap font-sans text-sm text-[#6B5487]">{transferInstructions}</pre>
-                      <p className="mt-4 text-xs text-[#6B5487]/80">
-                        Después de confirmar podrás subir el comprobante y quedará visible en el admin.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-                {paymentMethod === "Tarjeta" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                    animate={{ opacity: 1, height: "auto", marginTop: 24 }}
-                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="checkout-subpanel flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#B58CCC] p-8 text-center">
-                      <CreditCard className="mb-3 h-8 w-8 text-[#5A3F73]" />
-                      <span className="mb-1 text-sm font-bold text-[#4A3362]">Pago seguro con PayPhone</span>
-                      <span className="text-xs text-[#6B5487]/80">
-                        Al confirmar serás redirigido a la pasarela de pago para ingresar los datos de tu tarjeta
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          <aside className="lg:w-[400px]">
-            <div className="checkout-panel sticky top-32 rounded-[3rem] border-2 p-10">
-              <h3 className="mb-8 flex items-center gap-3 text-2xl font-serif font-bold text-[#4A3362] underline decoration-[#B58CCC] decoration-4">
-                <ShoppingBag className="h-6 w-6" /> RESUMEN
-              </h3>
-
-              <div className="custom-scrollbar mb-10 max-h-[400px] space-y-6 overflow-auto pr-2">
-                {items.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-[#6B5487]/70">Tu carrito está vacío.</p>
-                ) : (
-                  items.map((item, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-4 rounded-[1.75rem] border border-white/50 bg-white/45 p-3 shadow-[0_12px_28px_rgba(90,63,115,0.08)]"
-                    >
-                      <div className="h-20 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#DCC5E8] shadow-lg">
-                        <img src={item.product.image} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-xs font-bold leading-tight text-[#4A3362]">{item.product.name}</h4>
-                        <p className="mt-1 text-sm font-black text-[#5A3F73]">{item.product.price}</p>
-                        <p className="mt-1 text-[9px] font-bold uppercase text-[#8D73A6]">Cant: {item.quantity}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="checkout-subpanel relative mb-6 rounded-2xl p-5">
-                <label className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6B5487]">
-                  Zona de entrega
-                </label>
-                <div className="relative">
-                  <select
-                    value={sector.name}
-                    onChange={(e) => setSector(SECTORS.find((s) => s.name === e.target.value) || SECTORS[0])}
-                    className="checkout-input cursor-pointer appearance-none pr-12 text-sm font-bold"
-                  >
-                    {SECTORS.map((s) => (
-                      <option key={s.name} value={s.name} className="bg-[#2A1B38] text-white">
-                        {s.name} {s.price > 0 ? `(+$${s.price.toFixed(2)})` : "(Gratis)"}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2">
-                    <ChevronLeft className="-rotate-90 h-4 w-4 text-[#8D73A6]" />
-                  </div>
                 </div>
-              </div>
 
-              <div className="checkout-subpanel mb-6 rounded-2xl p-5">
-                <label className="mb-3 block text-[10px] font-bold uppercase tracking-widest text-[#6B5487]">
-                  ¿Tienes un cupón?
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="CÓDIGO"
-                    disabled={!!appliedCoupon}
-                    className="checkout-input flex-1 px-4 py-3 text-xs font-bold uppercase"
-                  />
-                  {appliedCoupon ? (
-                    <button
-                      onClick={() => {
-                        setAppliedCoupon(null);
-                        setCouponCode("");
-                      }}
-                      className="rounded-xl border border-red-500/30 bg-red-500/20 px-4 py-2 text-xs font-bold text-red-400"
-                    >
-                      QUITAR
-                    </button>
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {items.length === 0 ? (
+                    <p className="rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] px-5 py-4 text-sm font-semibold text-[#6B5487]">
+                      Tu carrito está vacío.
+                    </p>
                   ) : (
-                    <button
-                      onClick={handleValidateCoupon}
-                      disabled={isValidatingCoupon || !couponCode}
-                      className="rounded-xl bg-[#5A3F73] px-4 py-2 text-xs font-bold text-white shadow-lg shadow-[#5A3F73]/20 disabled:opacity-50"
-                    >
-                      {isValidatingCoupon ? "..." : "APLICAR"}
-                    </button>
+                    items.map((item, i) => (
+                      <div
+                        key={i}
+                        className="flex min-w-[240px] items-center gap-3 rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] p-3"
+                      >
+                        <div className="h-16 w-14 shrink-0 overflow-hidden rounded-xl border border-[#DCC5E8] bg-white">
+                          <img
+                            src={item.product.image}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-sm font-black text-[#4A3362]">
+                            {item.product.name}
+                          </h4>
+                          <p className="mt-1 text-sm font-black text-[#5A3F73]">
+                            {item.product.price}
+                          </p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[#8D73A6]">
+                            Cant: {item.quantity}
+                          </p>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
-                {appliedCoupon && (
-                  <p className="mt-2 text-[10px] font-bold uppercase text-green-500">Cupón aplicado con éxito</p>
-                )}
               </div>
 
-              <div className="space-y-4 border-t border-[#CDAFDE]/50 pt-6">
-                <div className="flex justify-between text-sm font-medium text-[#6B5487]">
-                  <span>Subtotal</span>
-                  <span>${cartSubtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-medium text-[#6B5487]">
-                  <span className="max-w-[200px] truncate">Envío ({sector.name.split(" ")[0]})</span>
-                  <span className="text-[#5A3F73]">
-                    {sector.price === 0 ? "GRATIS" : `+$${sector.price.toFixed(2)}`}
-                  </span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm font-bold text-green-500">
-                    <span>
-                      Descuento {appliedCoupon?.type === "PERCENTAGE" ? `(${appliedCoupon.percent_value * 100}%)` : ""}
-                    </span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+              <div className="rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] p-4">
+                <div className="mb-4">
+                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-[#6B5487]">
+                    Cupón
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      placeholder="CÓDIGO"
+                      disabled={!!appliedCoupon}
+                      className="checkout-input flex-1 px-4 py-3 text-xs font-bold uppercase"
+                    />
+                    {appliedCoupon ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAppliedCoupon(null);
+                          setCouponCode("");
+                        }}
+                        className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-black text-red-500"
+                      >
+                        Quitar
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleValidateCoupon}
+                        disabled={isValidatingCoupon || !couponCode}
+                        className="rounded-xl bg-[#5A3F73] px-4 py-2 text-xs font-black text-white shadow-lg shadow-[#5A3F73]/20 disabled:opacity-50"
+                      >
+                        {isValidatingCoupon ? "..." : "Aplicar"}
+                      </button>
+                    )}
                   </div>
-                )}
-                <div className="flex justify-between border-t border-[#CDAFDE]/50 pt-4 text-2xl font-black text-[#4A3362]">
-                  <span className="font-serif">TOTAL</span>
-                  <span className="text-[#5A3F73]">${finalTotal.toFixed(2)}</span>
+                  {appliedCoupon && (
+                    <p className="mt-2 text-[10px] font-bold uppercase text-green-600">
+                      Cupón aplicado
+                    </p>
+                  )}
                 </div>
+
+                <div className="space-y-3 border-t border-[#DCC5E8] pt-4">
+                  <div className="flex justify-between text-sm font-semibold text-[#6B5487]">
+                    <span>Subtotal</span>
+                    <span>${cartSubtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-[#6B5487]">
+                    <span>Entrega en Guayaquil</span>
+                    <span className="text-[#5A3F73]">A coordinar</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-semibold text-[#6B5487]">
+                    <span>Pago</span>
+                    <span className="text-[#5A3F73]">{paymentMethod}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm font-bold text-green-600">
+                      <span>Descuento</span>
+                      <span>-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t border-[#DCC5E8] pt-3 text-2xl font-black text-[#4A3362]">
+                    <span className="font-serif">Total</span>
+                    <span className="text-[#5A3F73]">
+                      ${finalTotal.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={
+                    activeStep === "payment"
+                      ? handleConfirmOrder
+                      : handleNextStep
+                  }
+                  disabled={items.length === 0 || orderStatus === "loading"}
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+                >
+                  {orderStatus === "loading" ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Procesando...
+                    </>
+                  ) : activeStep === "sender" ? (
+                    "Continuar a entrega"
+                  ) : activeStep === "receiver" ? (
+                    "Continuar a pago"
+                  ) : (
+                    `Confirmar pedido $${finalTotal.toFixed(2)}`
+                  )}
+                </button>
               </div>
-
-              <AnimatePresence>
-                {errorMsg && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-center text-xs font-bold text-red-400"
-                  >
-                    {errorMsg}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-
-              <button
-                onClick={handleConfirmOrder}
-                disabled={items.length === 0 || orderStatus === "loading"}
-                className="mt-10 flex w-full items-center justify-center gap-3 rounded-3xl border border-white/30 bg-[#5A3F73] py-6 text-lg font-black text-white shadow-xl shadow-[#5A3F73]/25 transition-all active:scale-95 hover:bg-[#4A3362] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {orderStatus === "loading" ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    Procesando...
-                  </>
-                ) : (
-                  `PAGAR $${finalTotal.toFixed(2)}`
-                )}
-              </button>
-              <p className="mt-6 flex items-center justify-center gap-2 text-center text-[10px] font-bold uppercase tracking-widest text-[#8D73A6]">
-                <Truck className="h-3 w-3" /> Entrega hoy garantizada
-              </p>
             </div>
           </aside>
+
+          <div className="order-1 space-y-8 lg:order-1">
+            <AnimatePresence>
+              {errorMsg && (
+                <motion.p
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mb-8 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-center text-sm font-bold text-red-500"
+                >
+                  {errorMsg}
+                </motion.p>
+              )}
+            </AnimatePresence>
+
+            <div className="space-y-8">
+              <div
+                className={cn(
+                  "checkout-panel rounded-[2rem] p-6 space-y-7 sm:p-10",
+                  activeStep !== "sender" && "hidden",
+                )}
+              >
+                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
+                  <User className="h-8 w-8" /> Quién envía
+                </h3>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label className="checkout-field">
+                    <span>
+                      <User className="h-4 w-4" /> Nombre *
+                    </span>
+                    <input
+                      ref={senderNameRef}
+                      autoComplete="name"
+                      className="checkout-input"
+                      placeholder="Nombre completo"
+                    />
+                  </label>
+                  <label className="checkout-field">
+                    <span>
+                      <Mail className="h-4 w-4" /> Correo electrónico *
+                    </span>
+                    <input
+                      ref={senderEmailRef}
+                      type="email"
+                      autoComplete="email"
+                      className="checkout-input"
+                      placeholder="correo@ejemplo.com"
+                    />
+                  </label>
+                  <label className="checkout-field md:col-span-2">
+                    <span>
+                      <Phone className="h-4 w-4" /> Teléfono *
+                    </span>
+                    <input
+                      ref={senderPhoneRef}
+                      type="tel"
+                      autoComplete="tel"
+                      className="checkout-input"
+                      placeholder="Número para confirmar el pedido"
+                    />
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 sm:w-auto"
+                >
+                  Continuar a entrega <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div
+                className={cn(
+                  "checkout-panel rounded-[2rem] p-6 space-y-7 sm:p-10",
+                  activeStep !== "receiver" && "hidden",
+                )}
+              >
+                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
+                  <Truck className="h-8 w-8" /> Quién recibe
+                </h3>
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <label className="checkout-field">
+                    <span>
+                      <User className="h-4 w-4" /> Nombre de la persona *
+                    </span>
+                    <input
+                      ref={receiverNameRef}
+                      className="checkout-input"
+                      placeholder="Nombre de quien recibe"
+                    />
+                  </label>
+                  <label className="checkout-field">
+                    <span>
+                      <Phone className="h-4 w-4" /> Teléfono *
+                    </span>
+                    <input
+                      ref={receiverPhoneRef}
+                      type="tel"
+                      className="checkout-input"
+                      placeholder="Teléfono de quien recibe"
+                    />
+                  </label>
+                  <label className="checkout-field md:col-span-2">
+                    <span>
+                      <MapPin className="h-4 w-4" /> Dirección exacta *
+                    </span>
+                    <input
+                      ref={addressRef}
+                      className="checkout-input"
+                      placeholder="Sector, ciudadela, calle, manzana, villa, referencia"
+                    />
+                  </label>
+                  <label className="checkout-field md:col-span-2">
+                    <span>
+                      <MessageSquare className="h-4 w-4" /> Mensaje para la
+                      tarjeta *
+                    </span>
+                    <textarea
+                      ref={cardMessageRef}
+                      className="checkout-input h-28 resize-none"
+                      placeholder="Escribe el mensaje que irá en la tarjeta"
+                    />
+                  </label>
+                  <label className="checkout-field">
+                    <span>
+                      <Clock className="h-4 w-4" /> Hora de entrega *
+                    </span>
+                    <input
+                      ref={dateTimeRef}
+                      className="checkout-input"
+                      placeholder="Ej: hoy de 15:00 a 17:00"
+                    />
+                  </label>
+                  <label className="checkout-field">
+                    <span>
+                      <FileText className="h-4 w-4" /> Observaciones
+                    </span>
+                    <textarea
+                      ref={observationsRef}
+                      className="checkout-input h-24 resize-none"
+                      placeholder="Referencias, indicaciones o detalles especiales"
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handlePreviousStep}
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 sm:flex-none"
+                  >
+                    Continuar a pago <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "checkout-panel rounded-[2rem] p-6 space-y-8 sm:p-10",
+                  activeStep !== "payment" && "hidden",
+                )}
+              >
+                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
+                  <CreditCard className="h-8 w-8" /> Métodos de pago
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {PAYMENT_METHODS.map(({ label, description, Icon }) => (
+                    <button
+                      key={label}
+                      onClick={() => setPaymentMethod(label)}
+                      className={cn(
+                        "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all",
+                        paymentMethod === label
+                          ? "border-[#5A3F73] bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
+                          : "border-[#DCC5E8] bg-white text-[#4A3362] hover:border-[#B58CCC] hover:bg-[#FBF7FD]",
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-7 w-7",
+                          paymentMethod === label
+                            ? "text-white"
+                            : "text-[#5A3F73]",
+                        )}
+                      />
+                      <span className="text-xl font-black">{label}</span>
+                      <span
+                        className={cn(
+                          "text-sm font-semibold leading-snug",
+                          paymentMethod === label
+                            ? "text-white/80"
+                            : "text-[#6B5487]",
+                        )}
+                      >
+                        {description}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={paymentMethod}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    className="checkout-subpanel rounded-2xl border border-dashed border-[#B58CCC] p-6"
+                  >
+                    {paymentMethod === "Banco" && (
+                      <>
+                        <p className="mb-4 text-base font-bold text-[#4A3362]">
+                          Datos para transferencia bancaria:
+                        </p>
+                        <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-[#5A3F73]">
+                          {transferInstructions}
+                        </pre>
+                        <p className="mt-4 text-sm font-medium text-[#6B5487]">
+                          Después de confirmar podrás subir el comprobante y
+                          quedará visible en el admin.
+                        </p>
+                      </>
+                    )}
+                    {paymentMethod === "Payphone" && (
+                      <div className="flex items-start gap-4">
+                        <Smartphone className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <div>
+                          <p className="text-base font-bold text-[#4A3362]">
+                            Pago seguro con Payphone
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                            Al confirmar serás redirigido a la pasarela para
+                            ingresar los datos de tu tarjeta.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {paymentMethod === "PayPal" && (
+                      <div className="flex items-start gap-4">
+                        <Globe2 className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <div>
+                          <p className="text-base font-bold text-[#4A3362]">
+                            Pago internacional o con tarjeta de crédito
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                            Registraremos tu pedido y el vendedor se pondrá en
+                            contacto contigo para completar el pago.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {paymentMethod === "Zelle" && (
+                      <div className="flex items-start gap-4">
+                        <CreditCard className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <div>
+                          <p className="text-base font-bold text-[#4A3362]">
+                            Pago por Zelle
+                          </p>
+                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                            Registraremos tu pedido y el vendedor compartirá o
+                            confirmará los datos de pago.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handlePreviousStep}
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95"
+                  >
+                    Volver a entrega
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmOrder}
+                    disabled={items.length === 0 || orderStatus === "loading"}
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {orderStatus === "loading" ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      `Confirmar pedido $${finalTotal.toFixed(2)}`
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -624,7 +1081,8 @@ function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("No se pudo leer el archivo seleccionado."));
+    reader.onerror = () =>
+      reject(new Error("No se pudo leer el archivo seleccionado."));
     reader.readAsDataURL(file);
   });
 }

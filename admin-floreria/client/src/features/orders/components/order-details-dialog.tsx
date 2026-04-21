@@ -17,7 +17,9 @@ import {
 } from "@/shared/components/ui/select";
 import {
   CheckCircle,
+  Clock,
   CreditCard,
+  FileText,
   Home,
   Image,
   Mail,
@@ -50,6 +52,50 @@ interface OrderDetailsDialogProps {
   statusOptions: { value: string; label: string }[];
 }
 
+function normalizeNoteLabel(label: string) {
+  return label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function parseStorefrontOrderNotes(notes?: string | null) {
+  const details: Record<string, string> = {};
+  if (!notes) return details;
+
+  notes.split("|").forEach((part) => {
+    const [rawLabel, ...valueParts] = part.split(":");
+    const value = valueParts.join(":").trim();
+    if (!rawLabel || !value) return;
+
+    const label = normalizeNoteLabel(rawLabel);
+    const keyByLabel: Record<string, string> = {
+      "quien envia": "senderName",
+      envia: "senderName",
+      "correo de quien envia": "senderEmail",
+      "telefono de quien envia": "senderPhone",
+      "quien recibe": "receiverName",
+      recibe: "receiverName",
+      "telefono de quien recibe": "receiverPhone",
+      "direccion exacta": "exactAddress",
+      sector: "exactAddress",
+      "hora de entrega": "deliveryDateTime",
+      "fecha entrega": "deliveryDateTime",
+      "mensaje para tarjeta": "cardMessage",
+      observaciones: "observations",
+      "metodo de pago": "paymentMethod",
+      "metodo pago": "paymentMethod",
+      cupon: "coupon",
+    };
+
+    const key = keyByLabel[label];
+    if (key) details[key] = value;
+  });
+
+  return details;
+}
+
 export function OrderDetailsDialog({
   order,
   open,
@@ -67,8 +113,19 @@ export function OrderDetailsDialog({
 
   const total = order.total || order.totalAmount || 0;
   const hasDiscounts = Number(order.total_discount_amount || 0) > 0;
-  const hasNotes =
-    order.description || order.notes || order.deliveryNotes || order.orderNotes;
+  const storefrontDetails = parseStorefrontOrderNotes(order.orderNotes);
+  const senderName =
+    storefrontDetails.senderName || `${order.customerName} ${order.customerLastName}`.trim();
+  const senderEmail = storefrontDetails.senderEmail || order.customerEmail;
+  const senderPhone = storefrontDetails.senderPhone || order.customerPhone;
+  const receiverName = storefrontDetails.receiverName || order.billingContactName;
+  const receiverPhone = storefrontDetails.receiverPhone;
+  const exactAddress = storefrontDetails.exactAddress || order.billingPrincipalAddress;
+  const deliveryDateTime = storefrontDetails.deliveryDateTime;
+  const cardMessage = storefrontDetails.cardMessage || order.deliveryNotes;
+  const observations = storefrontDetails.observations || order.customerReference;
+  const paymentMethod = storefrontDetails.paymentMethod || (order.clientTransactionId ? "Payphone" : null);
+  const hasNotes = order.description || order.notes;
 
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
@@ -153,7 +210,7 @@ export function OrderDetailsDialog({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-3 rounded-xl bg-gray-50 p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Cliente
+                Quién envía
               </h3>
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-200">
@@ -161,46 +218,62 @@ export function OrderDetailsDialog({
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900">
-                    {order.customerName} {order.customerLastName}
+                    {senderName || "No especificado"}
                   </p>
-                  {order.billingContactName &&
-                    order.billingContactName !== `${order.customerName} ${order.customerLastName}` && (
-                      <p className="text-xs text-gray-500">
-                        Contacto: {order.billingContactName}
-                      </p>
-                    )}
                 </div>
               </div>
               <div className="space-y-2 text-sm text-gray-700">
-                <InfoRow icon={<Mail className="h-4 w-4" />} value={order.customerEmail} />
-                {order.customerPhone && (
-                  <InfoRow icon={<Phone className="h-4 w-4" />} value={order.customerPhone} />
+                {senderEmail && <InfoRow icon={<Mail className="h-4 w-4" />} value={senderEmail} />}
+                {senderPhone && (
+                  <InfoRow icon={<Phone className="h-4 w-4" />} value={senderPhone} />
                 )}
               </div>
             </div>
 
             <div className="space-y-3 rounded-xl bg-gray-50 p-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Entrega
+                Quién recibe
               </h3>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-200">
+                  <Truck className="h-5 w-5 text-gray-500" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {receiverName || "No especificado"}
+                  </p>
+                </div>
+              </div>
               <div className="space-y-2 text-sm text-gray-700">
+                {receiverPhone && (
+                  <InfoRow icon={<Phone className="h-4 w-4" />} value={receiverPhone} />
+                )}
                 {(order.customerProvince || order.billingCity) && (
                   <InfoRow
                     icon={<MapPin className="h-4 w-4" />}
                     value={[order.customerProvince, order.billingCity].filter(Boolean).join(" · ")}
                   />
                 )}
-                {order.billingPrincipalAddress && (
-                  <InfoRow icon={<Home className="h-4 w-4" />} value={order.billingPrincipalAddress} />
+                {exactAddress && (
+                  <InfoRow icon={<Home className="h-4 w-4" />} value={exactAddress} />
                 )}
                 {order.billingSecondAddress && (
                   <InfoRow icon={<Home className="h-4 w-4 opacity-40" />} value={order.billingSecondAddress} />
                 )}
-                {order.customerReference && (
+                {deliveryDateTime && (
+                  <InfoRow icon={<Clock className="h-4 w-4" />} value={deliveryDateTime} />
+                )}
+                {cardMessage && (
+                  <InfoRow icon={<MessageSquare className="h-4 w-4" />} value={cardMessage} />
+                )}
+                {observations && (
                   <InfoRow
-                    icon={<span className="text-xs font-bold text-gray-400">Ref</span>}
-                    value={order.customerReference}
+                    icon={<FileText className="h-4 w-4" />}
+                    value={observations}
                   />
+                )}
+                {paymentMethod && (
+                  <InfoRow icon={<CreditCard className="h-4 w-4" />} value={paymentMethod} />
                 )}
                 {order.Courier && (
                   <InfoRow icon={<Truck className="h-4 w-4" />} value={order.Courier} />

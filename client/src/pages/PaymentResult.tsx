@@ -136,7 +136,7 @@ export default function PaymentResult() {
 
   if (status === "success") {
     return (
-      <div className="min-h-screen bg-[#3D2852] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
         <Seo
           title="Pago exitoso | DIFIORI"
           description="Resultado del proceso de pago."
@@ -146,7 +146,7 @@ export default function PaymentResult() {
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#2A1B38]/80 backdrop-blur-3xl p-14 rounded-[3rem] shadow-2xl border-2 border-[#5A3F73]/40 text-center max-w-lg w-full"
+          className="bg-white p-8 rounded-[2rem] shadow-2xl border border-[#E5D7EF] text-center max-w-lg w-full sm:p-12"
         >
           <motion.div
             initial={{ scale: 0 }}
@@ -155,12 +155,12 @@ export default function PaymentResult() {
           >
             <CheckCircle className="w-24 h-24 text-green-400 mx-auto mb-6" />
           </motion.div>
-          <h2 className="text-3xl font-serif font-bold text-[#E6E6E6] mb-3">¡Pago Exitoso!</h2>
+          <h2 className="text-3xl font-serif font-bold text-[#4A3362] mb-3">¡Pago exitoso!</h2>
           {orderNumber && (
             <p className="text-[#5A3F73] font-black text-lg mb-2">{orderNumber}</p>
           )}
-          <p className="text-[#E6E6E6]/60 text-sm mb-8">
-            Tu pago fue procesado correctamente. Nuestro equipo se pondrá en contacto contigo para coordinar la entrega.
+          <p className="text-[#5A3F73] text-base font-semibold mb-8">
+            Tu pago fue procesado correctamente. El vendedor se pondrá en contacto contigo. Esperamos tu respuesta.
           </p>
           <Link href="/">
             <button className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl">

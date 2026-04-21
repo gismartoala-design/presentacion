@@ -1,6 +1,7 @@
 const express = require('express');
 const { db: prisma } = require('../../lib/prisma');
 const cloudinary = require('../../lib/cloudinary');
+const { buildStorefrontOrderDetails } = require('../../utils/storefrontOrderDetails');
 const router = express.Router();
 
 /**
@@ -16,13 +17,17 @@ router.post('/', async (req, res) => {
       productPrice,
       quantity = 1,
       receiverName,
+      receiverPhone,
       senderName,
+      senderEmail,
+      senderPhone,
       phone,
       deliveryDateTime,
       exactAddress,
       sector,
       shippingCost,
       cardMessage,
+      observations,
       paymentMethod,
       total,
       couponCode,
@@ -77,14 +82,38 @@ router.post('/', async (req, res) => {
     // Generar número de orden único
     const ts = Date.now();
     const orderNumber = `DIFIORI-${ts}`;
+    const storefrontDetails = buildStorefrontOrderDetails({
+      senderName,
+      senderEmail,
+      senderPhone,
+      receiverName,
+      receiverPhone,
+      phone,
+      deliveryDateTime,
+      exactAddress,
+      sector,
+      cardMessage,
+      observations,
+      paymentMethod,
+    });
 
-    // Buscar producto si se proporcionó ID
-    let resolvedProductId = productId;
+    // Buscar producto válido en esta base antes de crear el item.
+    // El storefront puede tener IDs cacheados o de mock que no existen en el admin.
+    let resolvedProductId = null;
+    if (productId) {
+      const product = await prisma.product.findFirst({
+        where: { id: String(productId), isActive: true },
+        select: { id: true },
+      });
+      resolvedProductId = product?.id || null;
+    }
+
     if (!resolvedProductId && productName) {
       const product = await prisma.product.findFirst({
         where: { name: { contains: productName, mode: 'insensitive' }, isActive: true },
+        select: { id: true },
       });
-      resolvedProductId = product?.id;
+      resolvedProductId = product?.id || null;
     }
 
     // Crear la orden con transacción
@@ -94,23 +123,25 @@ router.post('/', async (req, res) => {
           orderNumber,
           customerName: senderName.split(' ')[0] || senderName,
           customerLastName: senderName.split(' ').slice(1).join(' ') || '',
-          billingPrincipalAddress: exactAddress || sector || 'No especificado',
-          billingSecondAddress: sector,
+          customerEmail: storefrontDetails.senderEmail,
+          billingPrincipalAddress: storefrontDetails.exactAddress || 'No especificado',
+          billingSecondAddress: null,
+          customerReference: storefrontDetails.observations,
           subtotal: Number(total) - Number(shippingCost || 0) - couponDiscountAmount,
           tax: 0,
           shipping: Number(shippingCost || 0),
           total: Number(total) - couponDiscountAmount,
           paymentStatus: 'PENDING',
           status: 'PENDING',
-          deliveryNotes: cardMessage || null,
-          customerPhone: phone,
+          deliveryNotes: storefrontDetails.cardMessage,
+          customerPhone: storefrontDetails.senderPhone,
           source: 'TIENDA_WEB',
           billingContactName: receiverName,
           discount_coupon_id: couponId,
           couponDiscountCode: appliedCouponCode,
           coupon_discounted_amount: couponDiscountAmount,
           total_discount_amount: couponDiscountAmount,
-          orderNotes: `Recibe: ${receiverName} | Envía: ${senderName} | Sector: ${sector || 'N/A'} | Método pago: ${paymentMethod || 'No especificado'} | Fecha entrega: ${deliveryDateTime || 'No especificada'}${appliedCouponCode ? ` | Cupón: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})` : ''}`,
+          orderNotes: `${storefrontDetails.orderNotes}${appliedCouponCode ? ` | Cupón: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})` : ''}`,
         },
       });
 

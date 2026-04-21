@@ -1,4 +1,5 @@
 const { nanoid } = require("nanoid");
+const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
 
 function splitFullName(fullName = "") {
   const trimmed = String(fullName).trim();
@@ -56,7 +57,18 @@ async function resolveCoupon(prisma, { couponCode, total, shippingCost }) {
 }
 
 async function resolveProductId(prisma, { productId, productName }) {
-  if (productId) return productId;
+  if (productId) {
+    const product = await prisma.product.findFirst({
+      where: {
+        id: String(productId),
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (product) return product.id;
+  }
+
   if (!productName) return null;
 
   const product = await prisma.product.findFirst({
@@ -76,13 +88,17 @@ async function createPendingPayphoneOrder(prisma, payload) {
     productPrice,
     quantity = 1,
     receiverName,
+    receiverPhone,
     senderName,
+    senderEmail,
+    senderPhone,
     phone,
     deliveryDateTime,
     exactAddress,
     sector,
     shippingCost,
     cardMessage,
+    observations,
     total,
     couponCode,
     paymentLabel = "Tarjeta (PayPhone Box)",
@@ -106,6 +122,20 @@ async function createPendingPayphoneOrder(prisma, payload) {
   const clientTransactionId = nanoid(16);
   const resolvedProductId = await resolveProductId(prisma, { productId, productName });
   const senderParts = splitFullName(senderName);
+  const storefrontDetails = buildStorefrontOrderDetails({
+    senderName,
+    senderEmail,
+    senderPhone,
+    receiverName,
+    receiverPhone,
+    phone,
+    deliveryDateTime,
+    exactAddress,
+    sector,
+    cardMessage,
+    observations,
+    paymentLabel,
+  });
 
   const order = await prisma.$transaction(async (tx) => {
     const newOrder = await tx.order.create({
@@ -114,23 +144,25 @@ async function createPendingPayphoneOrder(prisma, payload) {
         clientTransactionId,
         customerName: senderParts.firstName,
         customerLastName: senderParts.lastName,
-        customerPhone: phone,
-        billingContactName: receiverName,
-        billingPrincipalAddress: exactAddress || sector || "No especificado",
-        billingSecondAddress: sector,
+        customerEmail: storefrontDetails.senderEmail,
+        customerPhone: storefrontDetails.senderPhone,
+        billingContactName: storefrontDetails.receiverName,
+        billingPrincipalAddress: storefrontDetails.exactAddress || "No especificado",
+        billingSecondAddress: null,
+        customerReference: storefrontDetails.observations,
         subtotal: Number(total) - Number(shippingCost || 0) - couponDiscountAmount,
         tax: 0,
         shipping: Number(shippingCost || 0),
         total: finalTotal,
         paymentStatus: "PENDING",
         status: "PENDING",
-        deliveryNotes: cardMessage || null,
+        deliveryNotes: storefrontDetails.cardMessage,
         source: "TIENDA_WEB",
         discount_coupon_id: couponId,
         couponDiscountCode: appliedCouponCode,
         coupon_discounted_amount: couponDiscountAmount,
         total_discount_amount: couponDiscountAmount,
-        orderNotes: `Recibe: ${receiverName} | Envía: ${senderName} | Sector: ${sector || "N/A"} | Método pago: ${paymentLabel} | Fecha entrega: ${deliveryDateTime || "No especificada"}${appliedCouponCode ? ` | Cupón: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})` : ""}`,
+        orderNotes: `${storefrontDetails.orderNotes}${appliedCouponCode ? ` | Cupón: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})` : ""}`,
       },
     });
 
