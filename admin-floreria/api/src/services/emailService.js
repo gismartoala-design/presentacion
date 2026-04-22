@@ -173,6 +173,9 @@ class EmailService {
         remainingBalance,
         formattedChargedAmount: `$${chargedAmount.toFixed(2)}`,
         formattedRemainingBalance: `$${remainingBalance.toFixed(2)}`,
+        companyName: orderData.companyName || process.env.COMPANY_NAME || "DIFIORI",
+        companyEmail: orderData.companyEmail || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+        companyPhone: orderData.companyPhone || process.env.COMPANY_PHONE || "",
         // createdAt: new Date(orderData.createdAt).toLocaleDateString("es-EC", {
         //   year: "numeric",
         //   month: "long",
