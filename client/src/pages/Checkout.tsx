@@ -152,12 +152,14 @@ function resolveShippingCostBySector(
 }
 
 export default function Checkout() {
-  const { items, cartTotal, clearCart, setIsCartOpen } = useCart();
+  const { items, cartTotal, clearCart, setIsCartOpen, isCartLoading } = useCart();
   const [, setLocation] = useLocation();
   const { data: company } = useCompany();
   const [activeStep, setActiveStep] = useState<CheckoutStep>("sender");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("Banco");
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("idle");
+  const [isStepLoading, setIsStepLoading] = useState(false);
+  const [isCartOpening, setIsCartOpening] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [couponCode, setCouponCode] = useState("");
@@ -309,6 +311,7 @@ export default function Checkout() {
   }
 
   const finalTotal = cartSubtotal + shippingCost - discountAmount;
+  const isCheckoutBusy = isStepLoading || orderStatus === "loading";
 
   const focusCheckoutField = (
     step: CheckoutStep,
@@ -413,20 +416,49 @@ export default function Checkout() {
   };
 
   const handleNextStep = () => {
+    if (isCheckoutBusy) return;
+
     if (activeStep === "sender") {
-      if (validateSenderStep()) setActiveStep("receiver");
+      if (validateSenderStep()) {
+        setIsStepLoading(true);
+        window.setTimeout(() => {
+          setActiveStep("receiver");
+          setIsStepLoading(false);
+        }, 250);
+      }
       return;
     }
 
     if (activeStep === "receiver") {
-      if (validateReceiverStep()) setActiveStep("payment");
+      if (validateReceiverStep()) {
+        setIsStepLoading(true);
+        window.setTimeout(() => {
+          setActiveStep("payment");
+          setIsStepLoading(false);
+        }, 250);
+      }
     }
   };
 
   const handlePreviousStep = () => {
-    if (activeStep === "receiver") setActiveStep("sender");
-    if (activeStep === "payment") setActiveStep("receiver");
+    if (isCheckoutBusy) return;
+
+    setIsStepLoading(true);
+    window.setTimeout(() => {
+      if (activeStep === "receiver") setActiveStep("sender");
+      if (activeStep === "payment") setActiveStep("receiver");
+      setIsStepLoading(false);
+    }, 200);
     setErrorMsg("");
+  };
+
+  const handleOpenCart = () => {
+    if (isCartOpening || isCheckoutBusy) return;
+    setIsCartOpening(true);
+    window.setTimeout(() => {
+      setIsCartOpen(true);
+      setIsCartOpening(false);
+    }, 180);
   };
 
   const handleValidateCoupon = async () => {
@@ -460,6 +492,8 @@ export default function Checkout() {
   };
 
   const handleConfirmOrder = async () => {
+    if (isCheckoutBusy) return;
+
     const {
       senderName,
       senderEmail,
@@ -611,6 +645,32 @@ export default function Checkout() {
     await uploadPaymentProofForOrder(orderNumber, selectedProofFile);
   };
 
+  if (isCartLoading) {
+    return (
+      <div className="checkout-shell flex min-h-screen items-center justify-center bg-white px-6">
+        <Seo
+          title="Cargando carrito | DIFIORI"
+          description="Cargando el carrito antes de continuar con el checkout."
+          path="/checkout"
+          robots="noindex, nofollow"
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="checkout-panel flex w-full max-w-md flex-col items-center rounded-[2rem] p-10 text-center"
+        >
+          <Loader2 className="mb-5 h-12 w-12 animate-spin text-[#5A3F73]" />
+          <h1 className="font-serif text-3xl font-bold text-[#4A3362]">
+            Carrito cargando...
+          </h1>
+          <p className="mt-3 text-sm font-semibold text-[#6B5487]">
+            Estamos preparando tu pedido para continuar con el pago.
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (orderStatus === "success") {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-6">
@@ -741,10 +801,12 @@ export default function Checkout() {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setIsCartOpen(true)}
-                    className="shrink-0 rounded-full border border-[#DCC5E8] bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-[#5A3F73] transition-all hover:bg-[#FBF7FD]"
+                    onClick={handleOpenCart}
+                    disabled={isCartOpening || isCheckoutBusy}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#DCC5E8] bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-[#5A3F73] transition-all hover:bg-[#FBF7FD] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Ver / cambiar
+                    {isCartOpening ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
                   </button>
                 </div>
 
@@ -875,13 +937,13 @@ export default function Checkout() {
                       ? handleConfirmOrder
                       : handleNextStep
                   }
-                  disabled={items.length === 0 || orderStatus === "loading"}
+                  disabled={items.length === 0 || isCheckoutBusy}
                   className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
                 >
-                  {orderStatus === "loading" ? (
+                  {isCheckoutBusy ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      Procesando...
+                      {orderStatus === "loading" ? "Procesando..." : "Cargando..."}
                     </>
                   ) : activeStep === "sender" ? (
                     "Continuar a entrega"
@@ -959,9 +1021,19 @@ export default function Checkout() {
                 <button
                   type="button"
                   onClick={handleNextStep}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 sm:w-auto"
+                  disabled={isCheckoutBusy}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
-                  Datos de quien recibe <ArrowRight className="h-4 w-4" />
+                  {isStepLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Cargando...
+                    </>
+                  ) : (
+                    <>
+                      Datos de quien recibe <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -1066,16 +1138,27 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={handlePreviousStep}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95"
+                    disabled={isCheckoutBusy}
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Volver
                   </button>
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 sm:flex-none"
+                    disabled={isCheckoutBusy}
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
-                    Continuar a pago <ArrowRight className="h-4 w-4" />
+                    {isStepLoading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Cargando...
+                      </>
+                    ) : (
+                      <>
+                        Continuar a pago <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1093,9 +1176,11 @@ export default function Checkout() {
                   {PAYMENT_METHODS.map(({ label, description, Icon }) => (
                     <button
                       key={label}
+                      type="button"
                       onClick={() => setPaymentMethod(label)}
+                      disabled={isCheckoutBusy}
                       className={cn(
-                        "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all",
+                        "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
                         paymentMethod === label
                           ? "border-[#5A3F73] bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
                           : "border-[#DCC5E8] bg-white text-[#4A3362] hover:border-[#B58CCC] hover:bg-[#FBF7FD]"
@@ -1219,14 +1304,15 @@ export default function Checkout() {
                   <button
                     type="button"
                     onClick={handlePreviousStep}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95"
+                    disabled={isCheckoutBusy}
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Volver a entrega
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirmOrder}
-                    disabled={items.length === 0 || orderStatus === "loading"}
+                    disabled={items.length === 0 || isCheckoutBusy}
                     className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {orderStatus === "loading" ? (

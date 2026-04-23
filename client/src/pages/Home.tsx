@@ -278,16 +278,16 @@ export default function Home() {
         >
           <div className="text-center mb-16">
             <h2 className="section-title">Preguntas frecuentes</h2>
-            <p className="section-copy">
+            <p className="section-copy text-xl">
               Información clave sobre entregas, pagos y tiempos de atención.
             </p>
           </div>
 
           <div className="grid gap-6 max-w-4xl mx-auto">
             {FAQS.map((faq) => (
-              <article key={faq.question} className="surface-card p-7">
-                <h3 className="text-xl font-serif text-foreground mb-3">{faq.question}</h3>
-                <p className="text-foreground/70 leading-relaxed">{faq.answer}</p>
+              <article key={faq.question} className="surface-card p-8">
+                <h3 className="mb-4 font-serif text-2xl text-foreground md:text-3xl">{faq.question}</h3>
+                <p className="text-lg leading-relaxed text-foreground/72 md:text-xl">{faq.answer}</p>
               </article>
             ))}
           </div>

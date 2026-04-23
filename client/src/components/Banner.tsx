@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2, MessageCircle } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useCMS } from "@/hooks/useCMS";
@@ -183,9 +183,9 @@ export function Banner() {
                 href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}`}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group flex items-center gap-4 text-white hover:text-white/70 transition-colors uppercase font-bold text-[10px] tracking-[0.4em]"
+                className="group inline-flex items-center justify-center gap-3 rounded-full border border-[#25D366]/30 bg-[#25D366] px-6 py-4 text-xs font-black uppercase tracking-[0.22em] text-white shadow-[0_18px_42px_rgba(37,211,102,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5d] hover:shadow-[0_24px_52px_rgba(37,211,102,0.36)]"
               >
-                <div className="w-10 h-[1px] bg-white/40 group-hover:w-16 transition-all duration-500" />
+                <MessageCircle className="h-5 w-5" />
                 Asesoría WhatsApp
               </a>
             </div>

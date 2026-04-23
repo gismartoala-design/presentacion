@@ -16,6 +16,7 @@ interface CartContextType {
   buyNow: (product: Product) => void;
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
+  isCartLoading: boolean;
   cartTotal: number;
   cartItemCount: number;
 }
@@ -30,6 +31,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Load from local storage
   useEffect(() => {
+    let isMounted = true;
+
     try {
       const saved = localStorage.getItem("difiori_cart");
       if (saved) {
@@ -38,7 +41,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error("Error loading cart", e);
     }
-    setIsInitialized(true);
+
+    const timer = window.setTimeout(() => {
+      if (isMounted) setIsInitialized(true);
+    }, 650);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   // Save to local storage
@@ -108,6 +119,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         clearCart,
         isCartOpen,
         setIsCartOpen,
+        isCartLoading: !isInitialized,
         cartTotal,
         cartItemCount,
       }}

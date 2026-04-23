@@ -1,7 +1,7 @@
 import React from "react";
 import { Product } from "@/data/mock";
 import { Link } from "wouter";
-import { MessageSquare, ShoppingBag } from "lucide-react";
+import { Loader2, MessageSquare, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/context/CartContext";
 import { DEFAULT_COMPANY } from "@/lib/site";
@@ -13,9 +13,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { buyNow } = useCart();
+  const [isBuying, setIsBuying] = React.useState(false);
   const categoryLabel = formatCategoryDisplayName(product.category);
 
   const handleBuyNow = () => {
+    if (isBuying) return;
+    setIsBuying(true);
     buyNow(product);
     window.location.href = "/checkout"; // Safe navigation bypassing Wouter re-renders causing hook conflicts
   };
@@ -68,9 +71,13 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          <button type="button" onClick={handleBuyNow} className="ui-btn-primary w-full">
-            <ShoppingBag className="h-4 w-4" />
-            Comprar Ahora
+          <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary w-full">
+            {isBuying ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ShoppingBag className="h-4 w-4" />
+            )}
+            {isBuying ? "Cargando..." : "Comprar Ahora"}
           </button>
           <a 
             href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Me%20interesa%20el%20producto%20${encodeURIComponent(product.name)}`}

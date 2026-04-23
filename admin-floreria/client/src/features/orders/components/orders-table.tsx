@@ -12,6 +12,7 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Eye, DollarSign } from "lucide-react";
 import type { Order } from "../types";
 import { LocalDate } from "@/core/utils/date";
+import { parseStorefrontOrderNotes } from "../utils/order-notes";
 
 // Siguiente estado lógico en el flujo operativo
 const NEXT_STATUS: Record<string, { value: string; label: string; cls: string }> = {
@@ -53,6 +54,14 @@ export function OrdersTable({
   onMarkAsPaid,
   isLoading,
 }: OrdersTableProps) {
+  const getPaymentMethod = (order: Order) => {
+    const storefrontDetails = parseStorefrontOrderNotes(order.orderNotes);
+    if (storefrontDetails.paymentMethod) return storefrontDetails.paymentMethod;
+    if (order.clientTransactionId) return "Payphone";
+    if (order.cashOnDelivery) return "Reserva";
+    return "No especificado";
+  };
+
   return (
     <div className="overflow-x-auto relative">
       {/* Indicador de carga inline — no bloquea la tabla */}
@@ -79,6 +88,7 @@ export function OrdersTable({
             <TableHead className="font-semibold text-gray-800">Cliente</TableHead>
             <TableHead className="font-semibold text-gray-800">Estado</TableHead>
             <TableHead className="font-semibold text-gray-800">Pago</TableHead>
+            <TableHead className="font-semibold text-gray-800">Tipo de pago</TableHead>
             <TableHead className="font-semibold text-gray-800">Fecha</TableHead>
             <TableHead className="text-right font-semibold text-gray-800">Total</TableHead>
             <TableHead className="text-right font-semibold text-gray-800">Pendiente</TableHead>
@@ -90,6 +100,7 @@ export function OrdersTable({
             const next = NEXT_STATUS[order.status];
             const canMarkPaid =
               order.paymentStatus !== "PAID" && !order.clientTransactionId;
+            const paymentMethod = getPaymentMethod(order);
 
             return (
               <TableRow
@@ -151,6 +162,13 @@ export function OrdersTable({
                 <TableCell>
                   <Badge variant="outline" className={`text-xs ${getPaymentStatusColor(order.paymentStatus)}`}>
                     {getPaymentStatusText(order.paymentStatus)}
+                  </Badge>
+                </TableCell>
+
+                {/* Tipo de pago */}
+                <TableCell>
+                  <Badge variant="secondary" className="whitespace-nowrap text-xs">
+                    {paymentMethod}
                   </Badge>
                 </TableCell>
 

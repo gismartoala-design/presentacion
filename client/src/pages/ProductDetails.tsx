@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
-import { MessageSquare, Truck, ShieldCheck, Clock, ShoppingBag } from "lucide-react";
+import { MessageSquare, Truck, ShieldCheck, Clock, ShoppingBag, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/hooks/useProducts";
@@ -38,6 +38,7 @@ export default function ProductDetails() {
     return slugify(item.name) === routeValue;
   });
   const [selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
+  const [isBuying, setIsBuying] = useState(false);
 
   React.useEffect(() => {
     if (product) setSelectedImage(product.image);
@@ -53,7 +54,8 @@ export default function ProductDetails() {
   }, [product, routePath, setLocation]);
 
   const handleBuyNow = () => {
-    if (!product) return;
+    if (!product || isBuying) return;
+    setIsBuying(true);
     buyNow(product);
     setLocation("/checkout");
   };
@@ -263,9 +265,13 @@ export default function ProductDetails() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-6 mt-auto">
-              <button onClick={handleBuyNow} className="ui-btn-primary flex-1 py-5">
-                <ShoppingBag className="h-5 w-5" />
-                Comprar ahora
+              <button type="button" onClick={handleBuyNow} disabled={isBuying} className="ui-btn-primary flex-1 py-5">
+                {isBuying ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <ShoppingBag className="h-5 w-5" />
+                )}
+                {isBuying ? "Cargando..." : "Comprar ahora"}
               </button>
               <a
                 href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}?text=Hola!%20Deseo%20ordenar%20el%20arreglo:%20${encodeURIComponent(product.name)}`}
