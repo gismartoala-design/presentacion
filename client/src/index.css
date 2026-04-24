@@ -245,6 +245,24 @@
   @apply relative after:absolute after:bottom-0 after:left-0 after:h-[2px] after:w-0 after:bg-accent after:transition-all hover:after:w-full;
 }
 
+.product-description-strong {
+  color: #000000 !important;
+  font-family: Impact, "Arial Black", Arial, sans-serif !important;
+  font-size: 2.4rem !important;
+  font-style: normal !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.25 !important;
+  -webkit-text-stroke: 0.25px #000000;
+  text-shadow: 0 0 0 #000000;
+}
+
+@media (min-width: 640px) {
+  .product-description-strong {
+    font-size: 2.82rem !important;
+  }
+}
+
 #root {
   padding: 0;
 }

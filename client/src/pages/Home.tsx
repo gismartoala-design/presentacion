@@ -261,12 +261,12 @@ export default function Home() {
                       <div className="flex gap-1 mb-6 opacity-40 group-hover:opacity-100 transition-opacity duration-700">
                          {[...Array(review.stars)].map((_, s) => <Star key={s} className="w-5 h-5 fill-accent text-accent" />)}
                       </div>
-                      <p className="mb-8 font-serif text-[2rem] leading-relaxed italic text-[#8D6AB5]">"{review.content}"</p>
+                      <p className="mb-8 text-[1.7rem] font-black leading-relaxed text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>"{review.content}"</p>
                       <div className="flex items-center gap-4">
                          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center font-bold text-accent transition-transform duration-700 group-hover:rotate-[360deg]">{review.name[0]}</div>
                          <div>
-                            <h4 className="text-[1.15rem] font-black uppercase tracking-[0.2em] text-[#845EAE]">{review.name}</h4>
-                            <span className="text-[0.95rem] font-bold uppercase tracking-[0.16em] text-[#A582CB]">{review.role || "Cliente"}</span>
+                            <h4 className="text-[1.2rem] font-black uppercase tracking-[0.14em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>{review.name}</h4>
+                            <span className="text-[1rem] font-black uppercase tracking-[0.12em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>{review.role || "Cliente"}</span>
                          </div>
                       </div>
                    </motion.div>
@@ -288,8 +288,8 @@ export default function Home() {
           className="mb-40"
         >
           <div className="text-center mb-16">
-            <h2 className="section-title">Preguntas frecuentes</h2>
-            <p className="section-copy text-xl">
+            <h2 className="text-4xl font-black leading-tight text-[#4B1F6F] md:text-6xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>Preguntas frecuentes</h2>
+            <p className="mt-3 text-xl leading-relaxed text-[#4B1F6F] md:text-2xl" style={{ fontFamily: "Arial, sans-serif" }}>
               Información clave sobre entregas, pagos y tiempos de atención.
             </p>
           </div>
@@ -297,8 +297,8 @@ export default function Home() {
           <div className="grid gap-6 max-w-4xl mx-auto">
             {FAQS.map((faq) => (
               <article key={faq.question} className="surface-card p-8">
-                <h3 className="mb-4 font-serif text-2xl text-foreground md:text-3xl">{faq.question}</h3>
-                <p className="text-lg leading-relaxed text-foreground/72 md:text-xl">{faq.answer}</p>
+                <h3 className="mb-4 text-2xl font-black text-[#4B1F6F] md:text-3xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>{faq.question}</h3>
+                <p className="text-lg leading-relaxed text-[#4B1F6F] md:text-xl" style={{ fontFamily: "Arial, sans-serif" }}>{faq.answer}</p>
               </article>
             ))}
           </div>
@@ -323,7 +323,7 @@ export default function Home() {
                    className="mb-12 h-36 w-auto object-contain"
                    loading="eager"
                  />
-                 <p className="mb-12 font-semibold text-[1.5rem] leading-relaxed text-[#3D2852] italic font-serif">
+                 <p className="mb-12 text-[1.45rem] font-black leading-relaxed text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                    Diseñando emociones con las flores más frescas de exportación en Guayaquil.
                  </p>
                  <div className="flex gap-4">
@@ -336,8 +336,8 @@ export default function Home() {
               </div>
               
               <div>
-                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">La Maison</h4>
-                 <ul className="space-y-6 text-[1rem] font-bold uppercase tracking-widest text-[#3D2852]">
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.3em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>La Maison</h4>
+                 <ul className="space-y-6 text-[1rem] font-black uppercase tracking-widest text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Tienda</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Contacto</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Preguntas Frecuentes</li>
@@ -346,8 +346,8 @@ export default function Home() {
               </div>
 
               <div>
-                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">Soporte</h4>
-                 <ul className="space-y-6 text-[1rem] font-bold uppercase tracking-widest text-[#3D2852]">
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.3em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>Soporte</h4>
+                 <ul className="space-y-6 text-[1rem] font-black uppercase tracking-widest text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Envíos y Entregas</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Cuidado de Flores</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Política de Privacidad</li>
@@ -356,26 +356,26 @@ export default function Home() {
               </div>
 
               <div>
-                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">Contacto Directo</h4>
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.3em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>Contacto Directo</h4>
                  <div className="space-y-10">
                     <div className="flex items-center gap-5 group">
                        <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><MessageSquare className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-base font-black uppercase text-[#3D2852]">
-                          <span className="block mb-1.5 text-[#3D2852]">WhatsApp</span>
+                       <div className="text-base font-black uppercase text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                          <span className="block mb-1.5 text-[#4B1F6F]">WhatsApp</span>
                           <a href={`https://wa.me/${companyPhoneDigits}`} className="hover:text-accent transition-colors duration-500">{companyPhoneDisplay}</a>
                        </div>
                     </div>
                     <div className="flex items-center gap-5 group">
                        <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><Phone className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-base font-black uppercase text-[#3D2852]">
-                          <span className="block mb-1.5 text-[#3D2852]">Llamadas</span>
+                       <div className="text-base font-black uppercase text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                          <span className="block mb-1.5 text-[#4B1F6F]">Llamadas</span>
                           <span className="group-hover:text-accent transition-colors duration-500">{companyPhoneDisplay}</span>
                        </div>
                     </div>
                     <div className="flex items-center gap-5 group">
                        <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><Mail className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-base font-black uppercase text-[#3D2852]">
-                          <span className="block mb-1.5 text-[#3D2852]">Email</span>
+                       <div className="text-base font-black uppercase text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                          <span className="block mb-1.5 text-[#4B1F6F]">Email</span>
                           <span className="break-all group-hover:text-accent transition-colors duration-500">{companyEmail}</span>
                        </div>
                     </div>
@@ -384,10 +384,10 @@ export default function Home() {
            </div>
 
            <div className="flex flex-col items-center justify-between gap-10 border-t border-primary/10 pt-14 md:flex-row">
-              <p className="text-base font-black uppercase tracking-[0.55em] text-[#3D2852]">
+              <p className="text-base font-black uppercase tracking-[0.35em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                  © 2026 DIFIORI Ecuador. Todos los derechos reservados.
               </p>
-              <div className="flex gap-8 text-base font-black uppercase tracking-[0.35em] text-[#3D2852]">
+              <div className="flex gap-8 text-base font-black uppercase tracking-[0.3em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                  <span className="hover:text-accent cursor-pointer transition-colors duration-500">Guayaquil, Ecuador</span>
               </div>
            </div>

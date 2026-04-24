@@ -54,14 +54,14 @@ export function Banner() {
 
   if (isLoading) {
     return (
-      <div className="h-[85vh] md:h-screen bg-[#111] flex items-center justify-center">
+      <div className="h-[68vh] min-h-[520px] md:h-[76vh] bg-[#111] flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-white/20" />
       </div>
     );
   }
 
   return (
-    <div className="relative h-[85vh] md:h-screen bg-[#111] overflow-hidden group/banner">
+    <div className="relative h-[68vh] min-h-[520px] md:h-[76vh] bg-[#111] overflow-hidden group/banner">
       {/* Cinematic Crossfade Background */}
       <div className="absolute inset-0 w-full h-full">
         <AnimatePresence>
@@ -92,7 +92,7 @@ export function Banner() {
                 loading="eager"
                 decoding="async"
                 fetchPriority="high"
-                className="w-full h-full object-cover object-center contrast-[1.15] saturate-[1.1] brightness-[0.85]"
+                className="w-full h-full object-cover object-center md:object-[center_42%] contrast-[1.15] saturate-[1.1] brightness-[0.85]"
               />
             )}
             {/* Base Overlay to guarantee text readability */}
@@ -103,7 +103,7 @@ export function Banner() {
       </div>
 
       {/* Static UI Overlay - Stays in place perfectly without bounds stretching */}
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-end pb-12 z-20">
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-end pb-8 md:pb-10 z-20">
         
         {/* Vertical Slide Indicator - Left Side */}
         <div className="absolute left-10 lg:left-20 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-6 pointer-events-auto mix-blend-overlay">
@@ -122,7 +122,7 @@ export function Banner() {
         </div>
 
         {/* Minimalist Top Tag */}
-        <div className="absolute top-32 left-1/2 -translate-x-1/2 md:left-20 md:-translate-x-0 w-full md:w-auto text-center md:text-left z-30 pointer-events-auto">
+        <div className="hidden">
            <AnimatePresence mode="wait">
              <motion.div
                key={selectedIndex}
@@ -152,7 +152,7 @@ export function Banner() {
                   transition={{ duration: 0.8, ease: "easeOut" }}
                   className="text-center md:text-left"
                 >
-                  <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white mb-6 leading-none tracking-tight">
+                  <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif text-white mb-5 leading-none tracking-tight">
                     {slides[selectedIndex].title}
                   </h2>
                   <p className="text-white/60 font-serif italic text-xl md:text-2xl">
@@ -192,7 +192,7 @@ export function Banner() {
           </div>
 
           {/* Minimalist Progress Indicator (Mobile) */}
-          <div className="md:hidden mt-16 flex justify-center gap-4 opacity-70">
+          <div className="md:hidden mt-10 flex justify-center gap-4 opacity-70">
              {slides.map((_, i) => (
                <button
                  key={i}

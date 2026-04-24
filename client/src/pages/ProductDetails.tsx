@@ -243,7 +243,7 @@ export default function ProductDetails() {
               </div>
             </div>
 
-            <p className="mb-12 max-w-xl border-l-4 border-[#D7C4EA] pl-8 font-serif text-[1.65rem] leading-relaxed italic text-[#9E7FBE]">
+            <p className="product-description-strong mb-12 max-w-xl border-l-4 border-[#5A3F73] pl-8">
               "{product.description}"
             </p>
 

@@ -751,7 +751,7 @@ export default function Checkout() {
             Esperamos tu respuesta.
           </p>
           <Link href="/">
-            <button className="w-full bg-[#5A3F73] hover:bg-[#4A3362] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl">
+            <button className="w-full bg-[#4B1F6F] hover:bg-[#4A3362] text-white py-5 rounded-3xl font-black text-base transition-all shadow-xl">
               Volver a la tienda
             </button>
           </Link>
@@ -801,7 +801,7 @@ export default function Checkout() {
                 className={cn(
                   "flex min-h-[78px] flex-col items-center justify-center gap-1 rounded-[1.15rem] px-2 text-center transition-all sm:flex-row sm:gap-3 sm:text-left",
                   isActive
-                    ? "bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
+                    ? "bg-[#4B1F6F] text-white shadow-lg shadow-[#4B1F6F]/20"
                     : "bg-white text-[#4A3362] hover:bg-[#FBF7FD]"
                 )}
               >
@@ -811,7 +811,7 @@ export default function Checkout() {
                     isActive
                       ? "border-white/40 bg-white/15 text-white"
                       : isComplete
-                        ? "border-[#5A3F73] bg-[#5A3F73] text-white"
+                        ? "border-[#4B1F6F] bg-[#4B1F6F] text-white"
                         : "border-[#DCC5E8] bg-[#FBF7FD] text-[#4A3362]"
                   )}
                 >
@@ -844,14 +844,14 @@ export default function Checkout() {
             <div className="space-y-6">
               <div>
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
-                  <ShoppingBag className="h-7 w-7" /> Resumen
-                </h3>
+                  <h3 className="flex items-center gap-3 text-4xl font-black tracking-tight text-[#4B1F6F] sm:text-5xl" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
+                    <ShoppingBag className="h-9 w-9 text-[#4B1F6F]" /> Resumen
+                  </h3>
                   <button
                     type="button"
                     onClick={handleOpenCart}
                     disabled={isCartOpening || isCheckoutBusy}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#DCC5E8] bg-white px-5 py-2.5 text-sm font-black uppercase tracking-widest text-[#4A3362] transition-all hover:bg-[#FBF7FD] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#4B1F6F] bg-[#4B1F6F] px-5 py-2.5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isCartOpening ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                     {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
@@ -867,22 +867,22 @@ export default function Checkout() {
                     items.map((item, i) => (
                       <div
                         key={i}
-                        className="flex min-w-[285px] items-center gap-4 rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] p-4"
+                        className="flex min-w-full items-center gap-5 rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] p-4"
                       >
-                        <div className="h-20 w-16 shrink-0 overflow-hidden rounded-xl border border-[#DCC5E8] bg-white">
+                        <div className="h-28 w-24 shrink-0 overflow-hidden rounded-xl border border-[#DCC5E8] bg-white">
                           <img
                             src={item.product.image}
                             className="h-full w-full object-contain p-1"
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-[1.28rem] font-black text-[#4B0082]">
+                          <h4 className="whitespace-normal break-words text-[1.55rem] font-black leading-tight text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                             {item.product.name}
                           </h4>
-                          <p className="mt-1.5 text-[1.28rem] font-black text-[#4B0082]">
+                          <p className="mt-1.5 text-[1.7rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                             {item.product.price}
                           </p>
-                          <p className="mt-1.5 text-[1.05rem] font-black uppercase tracking-[0.16em] text-[#4B0082]">
+                          <p className="mt-1.5 text-[1.32rem] font-black uppercase tracking-[0.16em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                             Cant: {item.quantity}
                           </p>
                         </div>
@@ -922,7 +922,7 @@ export default function Checkout() {
                         type="button"
                         onClick={handleValidateCoupon}
                         disabled={isValidatingCoupon || !couponCode}
-                        className="rounded-xl bg-[#5A3F73] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#5A3F73]/20 disabled:opacity-50"
+                        className="rounded-xl bg-[#4B1F6F] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#4B1F6F]/20 disabled:opacity-50"
                       >
                         {isValidatingCoupon ? "..." : "Aplicar"}
                       </button>
@@ -936,19 +936,19 @@ export default function Checkout() {
                 </div>
 
                 <div className="space-y-3.5 border-t border-[#DCC5E8] pt-5">
-                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
+                  <div className="flex justify-between text-[1.42rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span>Subtotal</span>
                     <span>${cartSubtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
+                  <div className="flex justify-between text-[1.42rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span>Sector</span>
-                    <span className="text-[#4A3362]">
+                    <span className="text-[#4B1F6F]">
                       {sectorInput || "Pendiente"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
+                  <div className="flex justify-between text-[1.42rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span>Envío</span>
-                    <span className="text-[#4A3362]">
+                    <span className="text-[#4B1F6F]">
                       {shippingResolution.isMatched
                         ? `+$${shippingCost.toFixed(2)}`
                         : sectorInput
@@ -956,9 +956,9 @@ export default function Checkout() {
                           : "Ingresa tu sector"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
+                  <div className="flex justify-between text-[1.42rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span>Pago</span>
-                    <span className="text-[#4A3362]">{paymentMethod}</span>
+                    <span className="text-[#4B1F6F]">{paymentMethod}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-[1rem] font-bold text-green-600">
@@ -966,9 +966,9 @@ export default function Checkout() {
                       <span>-${discountAmount.toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between border-t border-[#DCC5E8] pt-4 text-[2.15rem] font-black text-[#4A3362]">
+                  <div className="flex justify-between border-t border-[#DCC5E8] pt-4 text-[2.65rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                     <span className="font-serif">Total</span>
-                    <span className="text-[#4A3362]">
+                    <span className="text-[#4B1F6F]">
                       ${finalTotal.toFixed(2)}
                     </span>
                   </div>
@@ -986,7 +986,7 @@ export default function Checkout() {
                       : handleNextStep
                   }
                   disabled={items.length === 0 || isCheckoutBusy}
-                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black uppercase tracking-widest text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-6 py-5 text-base font-black uppercase tracking-widest text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
                 >
                   {isCheckoutBusy ? (
                     <>
@@ -1026,7 +1026,7 @@ export default function Checkout() {
                   activeStep !== "sender" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                <h3 className="flex items-center gap-3 font-sans text-3xl font-black tracking-tight text-[#4B0082] sm:text-4xl">
                   <User className="h-9 w-9" /> Quién envía
                 </h3>
                 <div className="grid grid-cols-1 gap-5">
@@ -1070,7 +1070,7 @@ export default function Checkout() {
                   type="button"
                   onClick={handleNextStep}
                   disabled={isCheckoutBusy}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {isStepLoading ? (
                     <>
@@ -1091,7 +1091,7 @@ export default function Checkout() {
                   activeStep !== "receiver" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                <h3 className="flex items-center gap-3 font-sans text-3xl font-black tracking-tight text-[#4B0082] sm:text-4xl">
                   <Truck className="h-9 w-9" /> Quién recibe
                 </h3>
                 <div className="grid grid-cols-1 gap-5">
@@ -1212,7 +1212,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handleNextStep}
                     disabled={isCheckoutBusy}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
                     {isStepLoading ? (
                       <>
@@ -1234,7 +1234,7 @@ export default function Checkout() {
                   activeStep !== "payment" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                <h3 className="flex items-center gap-3 font-sans text-3xl font-black tracking-tight text-[#4B0082] sm:text-4xl">
                   <CreditCard className="h-9 w-9" /> Métodos de pago
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1247,7 +1247,7 @@ export default function Checkout() {
                       className={cn(
                         "flex min-h-[132px] flex-col items-start justify-between rounded-2xl border p-5 text-left transition-all disabled:cursor-not-allowed disabled:opacity-60",
                         paymentMethod === label
-                          ? "border-[#5A3F73] bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
+                          ? "border-[#4B1F6F] bg-[#4B1F6F] text-white shadow-lg shadow-[#4B1F6F]/20"
                           : "border-[#DCC5E8] bg-white text-[#4A3362] hover:border-[#B58CCC] hover:bg-[#FBF7FD]"
                       )}
                     >
@@ -1351,7 +1351,7 @@ export default function Checkout() {
                             setSelectedProofFile(e.target.files?.[0] || null);
                             setProofMessage("");
                           }}
-                          className="mt-4 block w-full text-sm text-[#4A3362] file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
+                          className="mt-4 block w-full text-sm text-[#4A3362] file:mr-3 file:rounded-xl file:border-0 file:bg-[#4B1F6F] file:px-4 file:py-2 file:text-white"
                         />
                         <p className="mt-3 text-sm font-black text-[#4A3362]">
                           {selectedProofFile
@@ -1380,7 +1380,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handleConfirmOrder}
                     disabled={items.length === 0 || isCheckoutBusy}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#4B1F6F] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#4B1F6F]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {orderStatus === "loading" ? (
                       <>

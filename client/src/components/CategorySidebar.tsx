@@ -78,10 +78,10 @@ export function CategorySidebar({
           <div className="min-w-0 flex items-center gap-3 text-left">
             <Filter className="h-5 w-5 shrink-0 text-[#6F4D95]" />
             <div className="min-w-0">
-              <span className="block text-[0.72rem] font-black uppercase tracking-[0.32em] text-[#9A82B7]">
+              <span className="block text-[0.95rem] font-black uppercase tracking-[0.24em] text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>
                 Categorías
               </span>
-              <span className="block truncate pt-1 text-[1.08rem] font-black text-[#4A3362]">{activeCategoryLabel}</span>
+              <span className="block truncate pt-1 text-[1.45rem] font-black text-[#4B1F6F]" style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}>{activeCategoryLabel}</span>
             </div>
           </div>
           <ChevronDown className={cn("h-6 w-6 shrink-0 text-[#6F4D95] transition-transform duration-500", isOpen && "rotate-180")} />
@@ -100,10 +100,11 @@ export function CategorySidebar({
                   <button
                     key={option.label}
                     className={cn(
-                      "w-full text-left p-5 hover:bg-primary/10 transition-colors font-semibold text-sm leading-snug border-b border-primary/5",
+                      "w-full text-left p-5 hover:bg-primary/10 transition-colors text-[1.2rem] font-black leading-snug border-b border-primary/5",
                       index === mobileOptions.length - 1 && "last:border-0",
-                      activeCategory === option.value ? "text-accent bg-primary/5" : "text-foreground/70",
+                      activeCategory === option.value ? "text-[#4B1F6F] bg-primary/5" : "text-[#4B1F6F]",
                     )}
+                    style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                     onClick={() => handleFilterSelection(option.value)}
                   >
                     {option.label}
@@ -117,10 +118,11 @@ export function CategorySidebar({
                       handleLinkSelection(option.href);
                     }}
                     className={cn(
-                      "block w-full text-left p-5 hover:bg-primary/10 transition-colors font-semibold text-sm leading-snug border-b border-primary/5",
+                      "block w-full text-left p-5 hover:bg-primary/10 transition-colors text-[1.2rem] font-black leading-snug border-b border-primary/5",
                       index === mobileOptions.length - 1 && "last:border-0",
-                      activeCategory === option.value ? "text-accent bg-primary/5" : "text-foreground/70",
+                      activeCategory === option.value ? "text-[#4B1F6F] bg-primary/5" : "text-[#4B1F6F]",
                     )}
+                    style={{ fontFamily: '"Arial Black", Arial, sans-serif' }}
                   >
                     {option.label}
                   </Link>
