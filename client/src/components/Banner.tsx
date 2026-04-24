@@ -162,8 +162,8 @@ export function Banner() {
              </AnimatePresence>
 
             <div className="flex flex-col sm:flex-row gap-6 items-center">
-              <Link href={slides[selectedIndex].href} className="group relative flex min-w-[240px] items-center justify-center gap-4 overflow-hidden border border-white/30 bg-white/5 px-12 py-5 text-xs font-bold uppercase tracking-[0.3em] text-white shadow-2xl backdrop-blur-sm transition-all hover:border-white">
-                <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]" />
+              <Link href={slides[selectedIndex].href} className="group relative flex min-h-[58px] min-w-[240px] items-center justify-center gap-4 overflow-hidden rounded-full bg-accent px-12 py-5 text-sm font-black uppercase tracking-[0.22em] text-white shadow-lg shadow-[#3D2852]/30 transition-all hover:-translate-y-0.5 hover:bg-[#4A3362] hover:shadow-xl hover:shadow-[#3D2852]/35">
+                <div className="absolute inset-0 translate-y-[100%] bg-white/10 transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover:translate-y-0" />
                 <AnimatePresence mode="wait">
                   <motion.span
                     key={selectedIndex}
@@ -171,7 +171,7 @@ export function Banner() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.4 }}
-                    className="relative z-10 flex items-center gap-4 group-hover:text-black transition-colors duration-500"
+                    className="relative z-10 flex items-center gap-4 text-white transition-colors duration-500"
                   >
                     {slides[selectedIndex].cta}
                     <ArrowRight className="h-4 w-4" />
@@ -183,10 +183,10 @@ export function Banner() {
                 href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}`}
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center gap-3 rounded-full border border-[#25D366]/30 bg-[#25D366] px-6 py-4 text-xs font-black uppercase tracking-[0.22em] text-white shadow-[0_18px_42px_rgba(37,211,102,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5d] hover:shadow-[0_24px_52px_rgba(37,211,102,0.36)]"
+                className="group inline-flex min-h-[58px] items-center justify-center gap-3 rounded-full border border-[#25D366]/30 bg-[#25D366] px-8 py-5 text-sm font-black uppercase tracking-[0.22em] text-white shadow-[0_18px_42px_rgba(37,211,102,0.28)] transition-all hover:-translate-y-0.5 hover:bg-[#1ebe5d] hover:shadow-[0_24px_52px_rgba(37,211,102,0.36)]"
               >
-                <MessageCircle className="h-5 w-5" />
-                Asesoría WhatsApp
+                <MessageCircle className="h-6 w-6" />
+                WhatsApp
               </a>
             </div>
           </div>

@@ -25,11 +25,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <motion.article
-      whileHover={{ y: -8 }}
-      className="surface-card group flex h-full flex-col overflow-hidden transition-all duration-500 hover:shadow-[0_24px_64px_rgba(74,51,98,0.14)]"
+      className="surface-card group flex h-full flex-col overflow-hidden border-[#DECDF0] transition-all duration-500"
       itemScope itemType="https://schema.org/Product"
     >
-      <Link href={getProductPath(product)} className="block relative aspect-[4/5] overflow-hidden bg-white">
+      <Link
+        href={getProductPath(product)}
+        className="relative block aspect-square overflow-hidden border-b border-primary/20 bg-white"
+      >
         <img 
           itemProp="image"
           src={product.image} 
@@ -37,9 +39,8 @@ export function ProductCard({ product }: ProductCardProps) {
           loading="lazy"
           decoding="async"
           fetchPriority="low"
-          className="w-full h-full object-contain object-center p-4 transition-transform duration-[1.5s] group-hover:scale-105"
+          className="h-full w-full object-contain object-center"
         />
-        <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors duration-500" />
         
         {product.isBestSeller && (
           <div className="absolute top-6 left-6 z-10 bg-accent text-white px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-lg">
@@ -49,10 +50,10 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
       
       <div className="flex flex-1 flex-col items-center p-6 text-center sm:p-7">
-        <span className="text-[10px] font-black text-accent uppercase tracking-[0.2em] mb-3">
+        <span className="text-[10px] font-black text-[#4A3362] uppercase tracking-[0.2em] mb-3">
           {categoryLabel}
         </span>
-        <h3 itemProp="name" className="mb-3 font-serif text-[2rem] font-bold leading-tight text-[#8F73B1]">
+        <h3 itemProp="name" className="mb-3 font-serif text-[2rem] font-bold leading-tight text-[#4A3362]">
           {product.name}
         </h3>
         

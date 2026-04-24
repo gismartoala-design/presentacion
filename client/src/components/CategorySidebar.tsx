@@ -81,7 +81,7 @@ export function CategorySidebar({
               <span className="block text-[0.72rem] font-black uppercase tracking-[0.32em] text-[#9A82B7]">
                 Categorías
               </span>
-              <span className="block truncate pt-1 text-[1.08rem] font-black text-[#5A3F73]">{activeCategoryLabel}</span>
+              <span className="block truncate pt-1 text-[1.08rem] font-black text-[#4A3362]">{activeCategoryLabel}</span>
             </div>
           </div>
           <ChevronDown className={cn("h-6 w-6 shrink-0 text-[#6F4D95] transition-transform duration-500", isOpen && "rotate-180")} />
@@ -132,7 +132,7 @@ export function CategorySidebar({
       </div>
 
       <div className="surface-card sticky top-32 hidden max-h-[calc(100vh-10rem)] flex-col gap-4 overflow-hidden p-6 lg:flex">
-        <h3 className="mb-6 flex items-center gap-3 px-2 font-serif text-3xl font-bold text-foreground">
+        <h3 className="mb-6 flex items-center gap-3 px-2 font-serif text-3xl font-bold text-[#4A3362]">
           Colecciones
         </h3>
         <div className="flex flex-col gap-3 overflow-y-auto pr-1 no-scrollbar">
@@ -143,8 +143,8 @@ export function CategorySidebar({
                 className={cn(
                   "group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-xl px-5 py-4 text-left text-[1.02rem] font-semibold leading-snug transition-all duration-300 lg:w-fit lg:max-w-full lg:min-w-0 xl:w-full",
                   activeCategory === option.value
-                    ? "bg-primary/20 text-accent shadow-sm"
-                    : "text-foreground/72 hover:bg-primary/10 hover:text-foreground border border-transparent",
+                    ? "bg-primary/20 text-[#4A3362] shadow-sm"
+                    : "text-[#4A3362]/80 hover:bg-[#4A3362] hover:text-[#EBDCF7] border border-transparent",
                 )}
                 onClick={() => setActiveCategory?.(option.value)}
               >
@@ -152,7 +152,7 @@ export function CategorySidebar({
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full transition-all duration-500 relative z-10 shrink-0",
-                    activeCategory === option.value ? "bg-accent scale-125" : "bg-primary/45 group-hover:bg-accent/70 group-hover:scale-110",
+                    activeCategory === option.value ? "bg-[#4A3362] scale-125" : "bg-primary/45 group-hover:bg-[#EBDCF7] group-hover:scale-110",
                   )}
                 ></div>
               </button>
@@ -167,15 +167,15 @@ export function CategorySidebar({
                 className={cn(
                   "group relative flex w-full items-center justify-between gap-4 overflow-hidden rounded-xl px-5 py-4 text-left text-[1.02rem] font-semibold leading-snug transition-all duration-300",
                   activeCategory === option.value
-                    ? "bg-primary/20 text-accent shadow-sm"
-                    : "text-foreground/72 hover:bg-primary/10 hover:text-foreground border border-transparent",
+                    ? "bg-primary/20 text-[#4A3362] shadow-sm"
+                    : "text-[#4A3362]/80 hover:bg-[#4A3362] hover:text-[#EBDCF7] border border-transparent",
                 )}
               >
                 <span className="relative z-10">{option.label}</span>
                 <div
                   className={cn(
                     "w-2 h-2 rounded-full transition-all duration-500 relative z-10 shrink-0",
-                    activeCategory === option.value ? "bg-accent scale-125" : "bg-primary/45 group-hover:bg-accent/70 group-hover:scale-110",
+                    activeCategory === option.value ? "bg-[#4A3362] scale-125" : "bg-primary/45 group-hover:bg-[#EBDCF7] group-hover:scale-110",
                   )}
                 ></div>
               </Link>

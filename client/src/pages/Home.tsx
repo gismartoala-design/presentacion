@@ -320,24 +320,24 @@ export default function Home() {
                  <img
                    src="/logo-footer.png"
                    alt="DIFIORI"
-                   className="mb-12 h-32 w-auto object-contain"
+                   className="mb-12 h-36 w-auto object-contain"
                    loading="eager"
                  />
-                 <p className="mb-12 text-base leading-relaxed text-foreground/50 italic font-serif">
+                 <p className="mb-12 font-semibold text-[1.5rem] leading-relaxed text-[#3D2852] italic font-serif">
                    Diseñando emociones con las flores más frescas de exportación en Guayaquil.
                  </p>
                  <div className="flex gap-4">
                     {[Instagram, Facebook, Music2].map((Icon, i) => (
-                      <div key={i} className="cursor-pointer rounded-2xl border border-primary/10 bg-primary/5 p-5 transition-all duration-500 hover:scale-110 hover:bg-accent hover:text-white">
-                         <Icon className="w-6 h-6" />
+                      <div key={i} className="cursor-pointer rounded-2xl border border-[#DECDF0] bg-white/35 p-6 text-[#3D2852] transition-all duration-500 hover:scale-110 hover:bg-accent hover:text-white">
+                         <Icon className="h-7 w-7" />
                       </div>
                     ))}
                  </div>
               </div>
               
               <div>
-                 <h4 className="mb-12 text-[1.05rem] font-black uppercase tracking-[0.4em] text-foreground">La Maison</h4>
-                 <ul className="space-y-6 text-sm font-bold uppercase tracking-widest text-foreground/60">
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">La Maison</h4>
+                 <ul className="space-y-6 text-[1rem] font-bold uppercase tracking-widest text-[#3D2852]">
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Tienda</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Contacto</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Preguntas Frecuentes</li>
@@ -346,8 +346,8 @@ export default function Home() {
               </div>
 
               <div>
-                 <h4 className="mb-12 text-[1.05rem] font-black uppercase tracking-[0.4em] text-foreground">Soporte</h4>
-                 <ul className="space-y-6 text-sm font-bold uppercase tracking-widest text-foreground/60">
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">Soporte</h4>
+                 <ul className="space-y-6 text-[1rem] font-bold uppercase tracking-widest text-[#3D2852]">
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Envíos y Entregas</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Cuidado de Flores</li>
                     <li className="hover:text-accent cursor-pointer transition-all duration-500 hover:translate-x-2">Política de Privacidad</li>
@@ -356,26 +356,26 @@ export default function Home() {
               </div>
 
               <div>
-                 <h4 className="mb-12 text-[1.05rem] font-black uppercase tracking-[0.4em] text-foreground">Contacto Directo</h4>
+                 <h4 className="mb-12 text-[1.2rem] font-black uppercase tracking-[0.4em] text-[#3D2852]">Contacto Directo</h4>
                  <div className="space-y-10">
                     <div className="flex items-center gap-5 group">
-                       <div className="rounded-2xl bg-accent/10 p-5 transition-colors duration-500 group-hover:bg-accent"><MessageSquare className="w-5 h-5 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-sm font-black uppercase">
-                          <span className="block mb-1.5 opacity-60">WhatsApp</span>
+                       <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><MessageSquare className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
+                       <div className="text-base font-black uppercase text-[#3D2852]">
+                          <span className="block mb-1.5 text-[#3D2852]">WhatsApp</span>
                           <a href={`https://wa.me/${companyPhoneDigits}`} className="hover:text-accent transition-colors duration-500">{companyPhoneDisplay}</a>
                        </div>
                     </div>
                     <div className="flex items-center gap-5 group">
-                       <div className="rounded-2xl bg-accent/10 p-5 transition-colors duration-500 group-hover:bg-accent"><Phone className="w-5 h-5 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-sm font-black uppercase">
-                          <span className="block mb-1.5 opacity-60">Llamadas</span>
+                       <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><Phone className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
+                       <div className="text-base font-black uppercase text-[#3D2852]">
+                          <span className="block mb-1.5 text-[#3D2852]">Llamadas</span>
                           <span className="group-hover:text-accent transition-colors duration-500">{companyPhoneDisplay}</span>
                        </div>
                     </div>
                     <div className="flex items-center gap-5 group">
-                       <div className="rounded-2xl bg-accent/10 p-5 transition-colors duration-500 group-hover:bg-accent"><Mail className="w-5 h-5 text-accent transition-colors duration-500 group-hover:text-white"/></div>
-                       <div className="text-sm font-black uppercase">
-                          <span className="block mb-1.5 opacity-60">Email</span>
+                       <div className="rounded-2xl bg-accent/10 p-6 transition-colors duration-500 group-hover:bg-accent"><Mail className="h-6 w-6 text-accent transition-colors duration-500 group-hover:text-white"/></div>
+                       <div className="text-base font-black uppercase text-[#3D2852]">
+                          <span className="block mb-1.5 text-[#3D2852]">Email</span>
                           <span className="break-all group-hover:text-accent transition-colors duration-500">{companyEmail}</span>
                        </div>
                     </div>
@@ -384,10 +384,10 @@ export default function Home() {
            </div>
 
            <div className="flex flex-col items-center justify-between gap-10 border-t border-primary/10 pt-14 md:flex-row">
-              <p className="text-sm font-black uppercase tracking-[0.55em] text-foreground/40">
+              <p className="text-base font-black uppercase tracking-[0.55em] text-[#3D2852]">
                  © 2026 DIFIORI Ecuador. Todos los derechos reservados.
               </p>
-              <div className="flex gap-8 text-sm font-black uppercase tracking-[0.35em] text-foreground/40">
+              <div className="flex gap-8 text-base font-black uppercase tracking-[0.35em] text-[#3D2852]">
                  <span className="hover:text-accent cursor-pointer transition-colors duration-500">Guayaquil, Ecuador</span>
               </div>
            </div>

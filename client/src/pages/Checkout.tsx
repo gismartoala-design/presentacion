@@ -707,11 +707,11 @@ export default function Checkout() {
           animate={{ opacity: 1, y: 0 }}
           className="checkout-panel flex w-full max-w-md flex-col items-center rounded-[2rem] p-10 text-center"
         >
-          <Loader2 className="mb-5 h-12 w-12 animate-spin text-[#5A3F73]" />
-          <h1 className="font-serif text-3xl font-bold text-[#4A3362]">
+          <Loader2 className="mb-5 h-12 w-12 animate-spin text-[#4A3362]" />
+          <h1 className="font-serif text-3xl font-black text-[#4A3362]">
             Carrito cargando...
           </h1>
-          <p className="mt-3 text-sm font-semibold text-[#6B5487]">
+          <p className="mt-3 text-sm font-black text-[#4A3362]">
             Estamos preparando tu pedido para continuar con el pago.
           </p>
         </motion.div>
@@ -740,13 +740,13 @@ export default function Checkout() {
           >
             <CheckCircle className="w-24 h-24 text-green-400 mx-auto mb-6" />
           </motion.div>
-          <h2 className="text-3xl font-serif font-bold text-[#4A3362] mb-3">
+          <h2 className="text-3xl font-serif font-black text-[#4A3362] mb-3">
             ¡Orden confirmada!
           </h2>
-          <p className="text-[#5A3F73] font-black text-lg mb-2">
+          <p className="text-[#4A3362] font-black text-lg mb-2">
             {orderNumber}
           </p>
-          <p className="text-[#5A3F73] text-base font-semibold mb-8">
+          <p className="text-[#4A3362] text-base font-black mb-8">
             Hemos recibido tu pedido. El vendedor se pondrá en contacto contigo.
             Esperamos tu respuesta.
           </p>
@@ -773,13 +773,13 @@ export default function Checkout() {
         <div className="mb-10 flex flex-col items-center text-center">
           <Link
             href="/#catalogo"
-            className="group mb-5 inline-flex items-center gap-2 font-bold text-[#6B5487] transition-colors hover:text-[#4A3362]"
+            className="group mb-5 inline-flex items-center gap-2 font-black text-[#4A3362] transition-colors hover:text-[#4A3362]"
           >
             <ChevronLeft className="h-5 w-5 transition-transform group-hover:translate-x-[-5px]" />
             Seguir comprando
           </Link>
 
-          <h1 className="text-4xl font-serif font-bold text-[#4A3362] sm:text-5xl">
+          <h1 className="text-4xl font-serif font-black text-[#4A3362] sm:text-5xl">
             Finaliza tu pedido
           </h1>
         </div>
@@ -802,33 +802,33 @@ export default function Checkout() {
                   "flex min-h-[78px] flex-col items-center justify-center gap-1 rounded-[1.15rem] px-2 text-center transition-all sm:flex-row sm:gap-3 sm:text-left",
                   isActive
                     ? "bg-[#5A3F73] text-white shadow-lg shadow-[#5A3F73]/20"
-                    : "bg-white text-[#6B5487] hover:bg-[#FBF7FD]"
+                    : "bg-white text-[#4A3362] hover:bg-[#FBF7FD]"
                 )}
               >
                 <span
                   className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-base font-black",
                     isActive
                       ? "border-white/40 bg-white/15 text-white"
                       : isComplete
                         ? "border-[#5A3F73] bg-[#5A3F73] text-white"
-                        : "border-[#DCC5E8] bg-[#FBF7FD] text-[#5A3F73]"
+                        : "border-[#DCC5E8] bg-[#FBF7FD] text-[#4A3362]"
                   )}
                 >
                   {isComplete ? (
-                    <CheckCircle className="h-4 w-4" />
+                    <CheckCircle className="h-5 w-5" />
                   ) : (
-                    <StepIcon className="h-4 w-4" />
+                    <StepIcon className="h-5 w-5" />
                   )}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-black sm:text-base">
+                  <span className="block text-base font-black sm:text-lg">
                     {step.label}
                   </span>
                   <span
                     className={cn(
-                      "hidden text-xs font-bold sm:block",
-                      isActive ? "text-white/75" : "text-[#8D73A6]"
+                      "hidden text-sm font-bold sm:block",
+                      isActive ? "text-white/75" : "text-[#4A3362]"
                     )}
                   >
                     {step.helper}
@@ -844,23 +844,23 @@ export default function Checkout() {
             <div className="space-y-6">
               <div>
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <h3 className="flex items-center gap-3 text-2xl font-serif font-bold uppercase tracking-wide text-[#4A3362] underline decoration-[#CDAFDE] decoration-4 underline-offset-4">
-                    <ShoppingBag className="h-6 w-6" /> Resumen
-                  </h3>
+                  <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                  <ShoppingBag className="h-7 w-7" /> Resumen
+                </h3>
                   <button
                     type="button"
                     onClick={handleOpenCart}
                     disabled={isCartOpening || isCheckoutBusy}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#DCC5E8] bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-[#5A3F73] transition-all hover:bg-[#FBF7FD] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#DCC5E8] bg-white px-5 py-2.5 text-sm font-black uppercase tracking-widest text-[#4A3362] transition-all hover:bg-[#FBF7FD] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isCartOpening ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {isCartOpening ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
                     {isCartOpening ? "Abriendo..." : "Ver / cambiar"}
                   </button>
                 </div>
 
                 <div className="flex gap-3 overflow-x-auto pb-2">
                   {items.length === 0 ? (
-                    <p className="rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] px-5 py-4 text-sm font-semibold text-[#6B5487]">
+                    <p className="rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] px-5 py-4 text-base font-black text-[#4A3362]">
                       Tu carrito esta vacio.
                     </p>
                   ) : (
@@ -876,13 +876,13 @@ export default function Checkout() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-[1.12rem] font-black text-[#4A3362]">
+                          <h4 className="truncate text-[1.28rem] font-black text-[#4B0082]">
                             {item.product.name}
                           </h4>
-                          <p className="mt-1.5 text-[1.12rem] font-black text-[#5A3F73]">
+                          <p className="mt-1.5 text-[1.28rem] font-black text-[#4B0082]">
                             {item.product.price}
                           </p>
-                          <p className="mt-1.5 text-[0.92rem] font-bold uppercase tracking-[0.16em] text-[#8D73A6]">
+                          <p className="mt-1.5 text-[1.05rem] font-black uppercase tracking-[0.16em] text-[#4B0082]">
                             Cant: {item.quantity}
                           </p>
                         </div>
@@ -894,7 +894,7 @@ export default function Checkout() {
 
               <div className="rounded-2xl border border-[#E5D7EF] bg-[#FBF7FD] p-5">
                 <div className="mb-4">
-                  <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-[#6B5487]">
+                  <label className="mb-2 block text-xs font-black uppercase tracking-widest text-[#4A3362]">
                     Cupón
                   </label>
                   <div className="flex gap-2">
@@ -904,7 +904,7 @@ export default function Checkout() {
                       onChange={(e) => setCouponCode(e.target.value)}
                       placeholder="CODIGO"
                       disabled={!!appliedCoupon}
-                      className="checkout-input flex-1 px-4 py-3 text-xs font-bold uppercase"
+                      className="checkout-input flex-1 px-4 py-3 text-base font-bold uppercase"
                     />
                     {appliedCoupon ? (
                       <button
@@ -922,7 +922,7 @@ export default function Checkout() {
                         type="button"
                         onClick={handleValidateCoupon}
                         disabled={isValidatingCoupon || !couponCode}
-                        className="rounded-xl bg-[#5A3F73] px-4 py-2 text-xs font-black text-white shadow-lg shadow-[#5A3F73]/20 disabled:opacity-50"
+                        className="rounded-xl bg-[#5A3F73] px-5 py-3 text-sm font-black text-white shadow-lg shadow-[#5A3F73]/20 disabled:opacity-50"
                       >
                         {isValidatingCoupon ? "..." : "Aplicar"}
                       </button>
@@ -936,19 +936,19 @@ export default function Checkout() {
                 </div>
 
                 <div className="space-y-3.5 border-t border-[#DCC5E8] pt-5">
-                  <div className="flex justify-between text-[1rem] font-semibold text-[#6B5487]">
+                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
                     <span>Subtotal</span>
                     <span>${cartSubtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-[1rem] font-semibold text-[#6B5487]">
+                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
                     <span>Sector</span>
-                    <span className="text-[#5A3F73]">
+                    <span className="text-[#4A3362]">
                       {sectorInput || "Pendiente"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[1rem] font-semibold text-[#6B5487]">
+                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
                     <span>Envío</span>
-                    <span className="text-[#5A3F73]">
+                    <span className="text-[#4A3362]">
                       {shippingResolution.isMatched
                         ? `+$${shippingCost.toFixed(2)}`
                         : sectorInput
@@ -956,9 +956,9 @@ export default function Checkout() {
                           : "Ingresa tu sector"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-[1rem] font-semibold text-[#6B5487]">
+                  <div className="flex justify-between text-[1.15rem] font-black text-[#4A3362]">
                     <span>Pago</span>
-                    <span className="text-[#5A3F73]">{paymentMethod}</span>
+                    <span className="text-[#4A3362]">{paymentMethod}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex justify-between text-[1rem] font-bold text-green-600">
@@ -968,12 +968,12 @@ export default function Checkout() {
                   )}
                   <div className="flex justify-between border-t border-[#DCC5E8] pt-4 text-[2.15rem] font-black text-[#4A3362]">
                     <span className="font-serif">Total</span>
-                    <span className="text-[#5A3F73]">
+                    <span className="text-[#4A3362]">
                       ${finalTotal.toFixed(2)}
                     </span>
                   </div>
                   {shippingResolution.isMatched && (
-                    <p className="text-right text-[0.82rem] font-semibold text-[#6B5487]">
+                    <p className="text-right text-[0.82rem] font-black text-[#4A3362]">
                       Total con envío adicional de ${shippingCost.toFixed(2)} para {shippingResolution.matchedSector}.
                     </p>
                   )}
@@ -986,7 +986,7 @@ export default function Checkout() {
                       : handleNextStep
                   }
                   disabled={items.length === 0 || isCheckoutBusy}
-                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black uppercase tracking-widest text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 lg:hidden"
                 >
                   {isCheckoutBusy ? (
                     <>
@@ -1026,13 +1026,13 @@ export default function Checkout() {
                   activeStep !== "sender" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
-                  <User className="h-8 w-8" /> Quién envía
+                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                  <User className="h-9 w-9" /> Quién envía
                 </h3>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
                     <span>
-                      <User className="h-4 w-4" /> Nombre *
+                      <User className="h-5 w-5" /> Nombre *
                     </span>
                     <input
                       ref={senderNameRef}
@@ -1043,7 +1043,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Mail className="h-4 w-4" /> Correo electrónico *
+                      <Mail className="h-5 w-5" /> Correo electrónico *
                     </span>
                     <input
                       ref={senderEmailRef}
@@ -1053,9 +1053,9 @@ export default function Checkout() {
                       placeholder="correo@ejemplo.com"
                     />
                   </label>
-                  <label className="checkout-field md:col-span-2">
+                  <label className="checkout-field">
                     <span>
-                      <Phone className="h-4 w-4" /> Teléfono *
+                      <Phone className="h-5 w-5" /> Teléfono *
                     </span>
                     <input
                       ref={senderPhoneRef}
@@ -1070,7 +1070,7 @@ export default function Checkout() {
                   type="button"
                   onClick={handleNextStep}
                   disabled={isCheckoutBusy}
-                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                 >
                   {isStepLoading ? (
                     <>
@@ -1091,13 +1091,13 @@ export default function Checkout() {
                   activeStep !== "receiver" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
-                  <Truck className="h-8 w-8" /> Quién recibe
+                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                  <Truck className="h-9 w-9" /> Quién recibe
                 </h3>
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5">
                   <label className="checkout-field">
                     <span>
-                      <User className="h-4 w-4" /> Nombre de la persona *
+                      <User className="h-5 w-5" /> Nombre de la persona *
                     </span>
                     <input
                       ref={receiverNameRef}
@@ -1107,7 +1107,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Phone className="h-4 w-4" /> Teléfono *
+                      <Phone className="h-5 w-5" /> Teléfono *
                     </span>
                     <input
                       ref={receiverPhoneRef}
@@ -1118,7 +1118,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <MapPin className="h-4 w-4" /> Sector *
+                      <MapPin className="h-5 w-5" /> Sector *
                     </span>
                     <input
                       ref={sectorRef}
@@ -1140,17 +1140,17 @@ export default function Checkout() {
                             key={item.sector}
                             type="button"
                             onClick={() => setSectorInput(item.sector)}
-                            className="flex w-full items-center justify-between border-b border-[#F0E6F7] px-4 py-3 text-left text-sm font-semibold text-[#6B5487] transition-colors hover:bg-[#FBF7FD] last:border-b-0"
+                    className="flex w-full items-center justify-between border-b border-[#F0E6F7] px-4 py-3 text-left text-base font-black text-[#4A3362] transition-colors hover:bg-[#FBF7FD] last:border-b-0"
                           >
                             <span>{item.sector}</span>
-                            <span className="text-[0.78rem] font-black uppercase tracking-[0.12em] text-[#A582CB]">
+                            <span className="text-[0.78rem] font-black uppercase tracking-[0.12em] text-[#4A3362]">
                               sugerido
                             </span>
                           </button>
                         ))}
                       </div>
                     ) : null}
-                    <span className="text-xs font-medium text-[#6B5487]">
+                    <span className="text-sm font-black text-[#4A3362]">
                       {shippingResolution.isMatched
                         ? `Costo de envío para ${shippingResolution.matchedSector}: $${shippingCost.toFixed(2)}`
                         : sectorInput
@@ -1160,7 +1160,7 @@ export default function Checkout() {
                   </label>
                   <label className="checkout-field">
                     <span>
-                      <Clock className="h-4 w-4" /> Hora de entrega *
+                      <Clock className="h-5 w-5" /> Hora de entrega *
                     </span>
                     <input
                       ref={dateTimeRef}
@@ -1168,9 +1168,9 @@ export default function Checkout() {
                       placeholder="Ej: hoy de 15:00 a 17:00"
                     />
                   </label>
-                  <label className="checkout-field md:col-span-2">
+                  <label className="checkout-field">
                     <span>
-                      <MapPin className="h-4 w-4" /> Dirección exacta *
+                      <MapPin className="h-5 w-5" /> Dirección exacta *
                     </span>
                     <input
                       ref={addressRef}
@@ -1178,9 +1178,9 @@ export default function Checkout() {
                       placeholder="Ciudadela, calle, manzana, villa, referencia"
                     />
                   </label>
-                  <label className="checkout-field md:col-span-2">
+                  <label className="checkout-field">
                     <span>
-                      <MessageSquare className="h-4 w-4" /> Mensaje para la tarjeta *
+                      <MessageSquare className="h-5 w-5" /> Mensaje para la tarjeta *
                     </span>
                     <textarea
                       ref={cardMessageRef}
@@ -1188,9 +1188,9 @@ export default function Checkout() {
                       placeholder="Escribe el mensaje que irá en la tarjeta"
                     />
                   </label>
-                  <label className="checkout-field md:col-span-2">
+                  <label className="checkout-field">
                     <span>
-                      <FileText className="h-4 w-4" /> Observaciones
+                      <FileText className="h-5 w-5" /> Observaciones
                     </span>
                     <textarea
                       ref={observationsRef}
@@ -1204,7 +1204,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handlePreviousStep}
                     disabled={isCheckoutBusy}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-lg font-black text-[#4A3362] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Volver
                   </button>
@@ -1212,7 +1212,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handleNextStep}
                     disabled={isCheckoutBusy}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
                   >
                     {isStepLoading ? (
                       <>
@@ -1234,8 +1234,8 @@ export default function Checkout() {
                   activeStep !== "payment" && "hidden"
                 )}
               >
-                <h3 className="flex items-center gap-3 text-3xl font-bold text-[#4A3362]">
-                  <CreditCard className="h-8 w-8" /> Métodos de pago
+                <h3 className="flex items-center gap-3 text-4xl font-black text-[#4A3362]">
+                  <CreditCard className="h-9 w-9" /> Métodos de pago
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {PAYMENT_METHODS.map(({ label, description, Icon }) => (
@@ -1256,16 +1256,16 @@ export default function Checkout() {
                           "h-7 w-7",
                           paymentMethod === label
                             ? "text-white"
-                            : "text-[#5A3F73]"
+                            : "text-[#4A3362]"
                         )}
                       />
-                      <span className="text-xl font-black">{label}</span>
+                      <span className="text-2xl font-black">{label}</span>
                       <span
                         className={cn(
-                          "text-sm font-semibold leading-snug",
+                          "text-base font-black leading-snug",
                           paymentMethod === label
                             ? "text-white/80"
-                            : "text-[#6B5487]"
+                            : "text-[#4A3362]"
                         )}
                       >
                         {description}
@@ -1284,25 +1284,25 @@ export default function Checkout() {
                   >
                     {paymentMethod === "Banco" && (
                       <>
-                        <p className="mb-4 text-base font-bold text-[#4A3362]">
+                        <p className="mb-4 text-base font-black text-[#4A3362]">
                           Datos para transferencia bancaria:
                         </p>
-                        <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-[#5A3F73]">
+                        <pre className="whitespace-pre-wrap font-sans text-base leading-relaxed text-[#4A3362]">
                           {transferInstructions}
                         </pre>
-                        <p className="mt-4 text-sm font-medium text-[#6B5487]">
+                        <p className="mt-4 text-base font-black text-[#4A3362]">
                           Puedes adjuntar el comprobante aquí. Cuando confirmes el pedido se subirá automáticamente y el admin lo verá en la orden.
                         </p>
                       </>
                     )}
                     {paymentMethod === "Payphone" && (
                       <div className="flex items-start gap-4">
-                        <Smartphone className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <Smartphone className="mt-1 h-7 w-7 text-[#4A3362]" />
                         <div>
-                          <p className="text-base font-bold text-[#4A3362]">
+                          <p className="text-lg font-black text-[#4A3362]">
                             Pago seguro con Payphone
                           </p>
-                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                          <p className="mt-1 text-base font-black text-[#4A3362]">
                             Al confirmar serás redirigido a la pasarela para ingresar los datos de tu tarjeta.
                           </p>
                         </div>
@@ -1310,12 +1310,12 @@ export default function Checkout() {
                     )}
                     {paymentMethod === "PayPal" && (
                       <div className="flex items-start gap-4">
-                        <Globe2 className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <Globe2 className="mt-1 h-7 w-7 text-[#4A3362]" />
                         <div>
-                          <p className="text-base font-bold text-[#4A3362]">
+                          <p className="text-lg font-black text-[#4A3362]">
                             Pago internacional o con tarjeta de crédito
                           </p>
-                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                          <p className="mt-1 text-base font-black text-[#4A3362]">
                             Al confirmar te redirigiremos a PayPal para completar el pago de forma segura.
                           </p>
                         </div>
@@ -1323,12 +1323,12 @@ export default function Checkout() {
                     )}
                     {paymentMethod === "Zelle" && (
                       <div className="flex items-start gap-4">
-                        <CreditCard className="mt-1 h-7 w-7 text-[#5A3F73]" />
+                        <CreditCard className="mt-1 h-7 w-7 text-[#4A3362]" />
                         <div>
-                          <p className="text-base font-bold text-[#4A3362]">
+                          <p className="text-lg font-black text-[#4A3362]">
                             Pago por Zelle
                           </p>
-                          <p className="mt-1 text-sm font-medium text-[#6B5487]">
+                          <p className="mt-1 text-base font-black text-[#4A3362]">
                             Registraremos tu pedido y el vendedor compartirá o confirmará los datos de pago. Si ya tienes el comprobante, adjúntalo aquí para subirlo automáticamente al confirmar.
                           </p>
                         </div>
@@ -1338,10 +1338,10 @@ export default function Checkout() {
                       paymentMethod === "Zelle" ||
                       paymentMethod === "PayPal") && (
                       <div className="mt-6 rounded-2xl border border-[#DCC5E8] bg-white p-4">
-                        <p className="text-sm font-bold text-[#4A3362]">
+                        <p className="text-base font-black text-[#4A3362]">
                           Comprobante de pago
                         </p>
-                        <p className="mt-1 text-xs font-medium text-[#6B5487]">
+                        <p className="mt-1 text-sm font-black text-[#4A3362]">
                           Selecciona la imagen del comprobante. Al confirmar el pedido se guardará automáticamente para que el admin pueda verlo.
                         </p>
                         <input
@@ -1351,15 +1351,15 @@ export default function Checkout() {
                             setSelectedProofFile(e.target.files?.[0] || null);
                             setProofMessage("");
                           }}
-                          className="mt-4 block w-full text-xs text-[#5A3F73] file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
+                          className="mt-4 block w-full text-sm text-[#4A3362] file:mr-3 file:rounded-xl file:border-0 file:bg-[#5A3F73] file:px-4 file:py-2 file:text-white"
                         />
-                        <p className="mt-3 text-xs font-semibold text-[#5A3F73]">
+                        <p className="mt-3 text-sm font-black text-[#4A3362]">
                           {selectedProofFile
                             ? `Archivo listo: ${selectedProofFile.name}`
                             : "Aún no has seleccionado un comprobante."}
                         </p>
                         {proofMessage && (
-                          <p className="mt-2 text-xs text-[#5A3F73]">
+                          <p className="mt-2 text-sm text-[#4A3362]">
                             {proofMessage}
                           </p>
                         )}
@@ -1372,7 +1372,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handlePreviousStep}
                     disabled={isCheckoutBusy}
-                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-base font-black text-[#5A3F73] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-2xl border border-[#DCC5E8] bg-white px-6 py-5 text-lg font-black text-[#4A3362] transition-all hover:bg-[#FBF7FD] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Volver a entrega
                   </button>
@@ -1380,7 +1380,7 @@ export default function Checkout() {
                     type="button"
                     onClick={handleConfirmOrder}
                     disabled={items.length === 0 || isCheckoutBusy}
-                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-base font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center gap-3 rounded-2xl bg-[#5A3F73] px-6 py-5 text-lg font-black text-white shadow-lg shadow-[#5A3F73]/20 transition-all hover:bg-[#4A3362] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {orderStatus === "loading" ? (
                       <>

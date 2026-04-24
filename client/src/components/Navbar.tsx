@@ -46,16 +46,16 @@ export function Navbar() {
         {isSearchOpen && <SearchOverlay isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />}
       </Suspense>
 
-      <nav className="fixed top-0 z-50 w-full border-b border-primary/10 bg-white py-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-1000 lg:py-8">
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="hidden lg:grid grid-cols-3 items-center">
-            <div className="flex items-center justify-start gap-10">
+      <nav className="fixed top-0 z-50 w-full border-b border-primary/10 bg-white py-6 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-1000 lg:py-7 min-[1440px]:py-8">
+        <div className="mx-auto w-full px-6 lg:px-8 min-[1440px]:px-12">
+          <div className="hidden lg:grid grid-cols-[minmax(0,1fr)_clamp(190px,16vw,260px)_minmax(0,1fr)] items-center gap-3 min-[1440px]:gap-5">
+            <div className="flex min-w-0 items-center justify-start gap-5 min-[1440px]:gap-10">
               {leftLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
                   className={cn(
-                    "group relative text-[1.14rem] font-black uppercase tracking-[0.18em] transition-all duration-500",
+                    "group relative whitespace-nowrap text-[clamp(0.95rem,1.05vw,1.08rem)] font-black uppercase tracking-[0.14em] transition-all duration-500 min-[1440px]:tracking-[0.18em] min-[1600px]:text-[1.14rem]",
                     "text-foreground hover:text-accent",
                   )}
                 >
@@ -70,23 +70,23 @@ export function Navbar() {
               ))}
             </div>
 
-            <div className="flex items-center justify-center">
-              <Link href="/" className="group flex items-center">
+            <div className="flex min-w-0 items-center justify-center">
+              <Link href="/" className="group flex w-full items-center justify-center overflow-visible">
                 <Logo
                   size="md"
                   variant="dark"
-                  className="transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                  className="w-full max-w-[230px] scale-95 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] min-[1440px]:max-w-[260px] min-[1440px]:scale-100"
                 />
               </Link>
             </div>
 
-            <div className="flex items-center justify-end gap-10">
+            <div className="flex min-w-0 items-center justify-end gap-5 min-[1440px]:gap-10">
               {rightLinks.map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
                   className={cn(
-                    "group relative hidden text-[1.14rem] font-black uppercase tracking-[0.18em] transition-all duration-500 xl:block",
+                    "group relative hidden whitespace-nowrap text-[clamp(0.95rem,1.05vw,1.08rem)] font-black uppercase tracking-[0.14em] transition-all duration-500 xl:block min-[1440px]:tracking-[0.18em] min-[1600px]:text-[1.14rem]",
                     "text-foreground hover:text-accent",
                   )}
                 >
@@ -101,7 +101,7 @@ export function Navbar() {
               ))}
 
               <div
-                className="flex items-center gap-8 border-l pl-8 transition-colors duration-500"
+                className="flex shrink-0 items-center gap-4 border-l pl-4 transition-colors duration-500 min-[1440px]:gap-8 min-[1440px]:pl-8"
                 style={{
                   borderLeftColor: "rgba(0,0,0,0.1)",
                 }}
@@ -115,7 +115,7 @@ export function Navbar() {
                     "text-foreground hover:text-accent",
                   )}
                 >
-                  <Search className="h-7 w-7" strokeWidth={2} />
+                  <Search className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
                 </button>
                 <button
                   type="button"
@@ -128,11 +128,11 @@ export function Navbar() {
                   )}
                 >
                   {isCartNavigating ? (
-                    <Loader2 className="h-7 w-7 animate-spin" strokeWidth={2} />
+                    <Loader2 className="h-6 w-6 animate-spin min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
                   ) : (
-                    <ShoppingBag className="h-7 w-7" strokeWidth={2} />
+                    <ShoppingBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
                   )}
-                  <span className="translate-y-[2px] text-sm font-black tracking-widest">({cartItemCount})</span>
+                  <span className="translate-y-[2px] text-xs font-black tracking-widest min-[1440px]:text-sm">({cartItemCount})</span>
                 </button>
               </div>
             </div>
