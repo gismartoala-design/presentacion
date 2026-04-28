@@ -6,7 +6,6 @@ import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
-import { INITIAL_PRODUCTS } from "../client/src/data/mock";
 import {
   BEST_SELLERS_CATEGORY_NAME,
   BEST_SELLERS_CATEGORY_SLUG,
@@ -14,6 +13,7 @@ import {
   getCategoryPath,
   getProductIdFromSlug,
   getProductPath,
+  isPublicCatalogProduct,
   slugify,
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
@@ -81,6 +81,7 @@ const ASSET_BASE_URL =
   normalizeUrl(process.env.APP_PUBLIC_ASSET_URL || process.env.ASSET_BASE_URL || process.env.VITE_ASSET_BASE_URL) ||
   "";
 const DEFAULT_HERO_IMAGE = "/assets/banner_collage.jpg";
+const HOME_PRODUCT_LIMIT = 8;
 const PAYPHONE_WEB_TOKEN = process.env.PAYPHONE_WEB_TOKEN || process.env.PAYPHONE_TOKEN;
 const PAYPHONE_WEB_STORE_ID = process.env.PAYPHONE_WEB_STORE_ID || process.env.PAYPHONE_STORE_ID;
 
@@ -202,8 +203,8 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
   if (path === "/") {
     await Promise.all([
       queryClient.prefetchQuery({
-        queryKey: productsQueryKey(),
-        queryFn: () => fetchProducts(undefined, baseUrl),
+        queryKey: productsQueryKey({ limit: HOME_PRODUCT_LIMIT }),
+        queryFn: () => fetchProducts({ limit: HOME_PRODUCT_LIMIT }, baseUrl),
       }),
       queryClient.prefetchQuery({
         queryKey: categoriesQueryKey,
@@ -313,6 +314,14 @@ async function proxyToBackend(req: Request, res: Response) {
 
     if (req.originalUrl.startsWith("/uploads/") && !response.headers.has("cache-control")) {
       res.setHeader("Cache-Control", "public, max-age=31536000, stale-while-revalidate=86400");
+    }
+
+    if (
+      req.method === "GET" &&
+      req.originalUrl.startsWith("/api/external/") &&
+      !response.headers.has("cache-control")
+    ) {
+      res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=600");
     }
 
     res.status(response.status);
@@ -496,6 +505,8 @@ type PublicProduct = {
   name: string;
   category: string;
   isBestSeller: boolean;
+  description: string;
+  price: string;
 };
 
 async function fetchPublicProducts(): Promise<PublicProduct[]> {
@@ -512,21 +523,18 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
     }
 
     return payload.data
-      .map((product: { id?: string | number; name?: string; category?: string; isBestSeller?: boolean }) => ({
+      .map((product: { id?: string | number; name?: string; description?: string; price?: string | number; category?: string; isBestSeller?: boolean }) => ({
         id: String(product.id || "").trim(),
         name: String(product.name || "").trim(),
+        description: String(product.description || "").trim(),
+        price: String(product.price || "").trim(),
         category: String(product.category || "General").trim(),
         isBestSeller: Boolean(product.isBestSeller),
       }))
-      .filter((product: PublicProduct) => product.id && product.name);
+      .filter((product: PublicProduct) => product.id && isPublicCatalogProduct(product));
   } catch (error) {
-    console.warn("Could not fetch live products for sitemap, falling back to mock data.", error);
-    return INITIAL_PRODUCTS.map((product) => ({
-      id: String(product.id),
-      name: product.name,
-      category: product.category,
-      isBestSeller: product.isBestSeller,
-    }));
+    console.warn("Could not fetch live products for sitemap.", error);
+    return [];
   }
 }
 
