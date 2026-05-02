@@ -13,10 +13,10 @@ import {
   getCategoryPath,
   getProductIdFromSlug,
   getProductPath,
-  isPublicCatalogProduct,
   slugify,
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
+import { toPublicImageUrl } from "../client/src/lib/media";
 import { renderApp } from "../client/src/server-entry";
 import { DEFAULT_SEO_STATE, renderSeoTags } from "../client/src/components/Seo";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
@@ -158,6 +158,27 @@ function serializeForScript(value: unknown) {
     .replace(/\u2029/g, "\\u2029");
 }
 
+function isClosedStreamError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const code = "code" in error ? String(error.code || "") : "";
+  const name = "name" in error ? String(error.name || "") : "";
+  const message = "message" in error ? String(error.message || "") : "";
+
+  return (
+    code === "ERR_STREAM_UNABLE_TO_PIPE" ||
+    code === "ERR_STREAM_PREMATURE_CLOSE" ||
+    code === "ECONNRESET" ||
+    name === "AbortError" ||
+    message.includes("premature close") ||
+    message.includes("aborted")
+  );
+}
+
+function shouldIgnoreProxyStreamError(error: unknown, req: Request, res: Response) {
+  return isClosedStreamError(error) && (req.destroyed || req.aborted || res.destroyed || res.writableEnded);
+}
+
 function injectHtml(
   template: string,
   {
@@ -183,14 +204,6 @@ function buildPublicConfigScript() {
   })}</script>`;
 }
 
-function normalizePublicAssetUrl(url: string) {
-  if (!url || url.startsWith("data:")) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-
-  const path = url.startsWith("/") ? url : `/${url}`;
-  return ASSET_BASE_URL ? `${ASSET_BASE_URL}${path}` : path;
-}
-
 function getHomeHeroPreload(queryClient: QueryClient) {
   const cms = queryClient.getQueryData<{
     images?: Array<string | { url?: unknown }> | string | null;
@@ -203,7 +216,7 @@ function getHomeHeroPreload(queryClient: QueryClient) {
       : firstImage && typeof firstImage === "object"
         ? String(firstImage.url || "")
         : DEFAULT_HERO_IMAGE;
-  const href = normalizePublicAssetUrl(rawImage.trim() || DEFAULT_HERO_IMAGE);
+  const href = toPublicImageUrl(rawImage.trim() || DEFAULT_HERO_IMAGE);
 
   return href
     ? `<link rel="preload" as="image" href="${escapeXml(href)}" fetchpriority="high" imagesizes="100vw" />`
@@ -309,6 +322,12 @@ async function proxyToBackend(req: Request, res: Response) {
   const ifModifiedSince = req.get("If-Modified-Since");
   const range = req.get("Range");
   const cacheControl = req.get("Cache-Control");
+  const abortController = new AbortController();
+  const abortRequest = () => abortController.abort();
+
+  req.once("aborted", abortRequest);
+  req.once("close", abortRequest);
+  res.once("close", abortRequest);
 
   try {
     const response = await fetch(backendUrl, {
@@ -321,6 +340,7 @@ async function proxyToBackend(req: Request, res: Response) {
         ...(range ? { Range: range } : {}),
         ...(cacheControl ? { "Cache-Control": cacheControl } : {}),
       },
+      signal: abortController.signal,
       body: ["POST", "PUT", "PATCH"].includes(req.method) ? JSON.stringify(req.body) : undefined,
     });
 
@@ -353,10 +373,85 @@ async function proxyToBackend(req: Request, res: Response) {
     await pipeline(Readable.fromWeb(response.body as any), res);
     return;
   } catch (error) {
+    if (shouldIgnoreProxyStreamError(error, req, res)) {
+      return;
+    }
+
     console.error(`Proxy Error (Store -> Backend) [${req.method} ${backendUrl}]:`, error);
     return res.status(500).json({ status: "error", message: "Error conectando con el servidor de productos" });
+  } finally {
+    req.off("aborted", abortRequest);
+    req.off("close", abortRequest);
+    res.off("close", abortRequest);
   }
 }
+
+app.get("/image-proxy", async (req, res) => {
+  const rawUrl = String(req.query.url || "").trim();
+  if (!rawUrl) {
+    return res.status(400).send("Missing image url");
+  }
+  const abortController = new AbortController();
+  const abortRequest = () => abortController.abort();
+
+  req.once("aborted", abortRequest);
+  req.once("close", abortRequest);
+  res.once("close", abortRequest);
+
+  let target: URL;
+  try {
+    target = new URL(rawUrl);
+  } catch {
+    return res.status(400).send("Invalid image url");
+  }
+
+  if (!["http:", "https:"].includes(target.protocol)) {
+    return res.status(400).send("Unsupported protocol");
+  }
+
+  try {
+    const response = await fetch(target, {
+      signal: abortController.signal,
+      headers: {
+        Accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
+    });
+
+    if (!response.ok || !response.body) {
+      return res.status(response.status || 502).send("Could not fetch image");
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType && !contentType.startsWith("image/")) {
+      return res.status(415).send("Unsupported content type");
+    }
+
+    if (contentType) {
+      res.setHeader("Content-Type", contentType);
+    }
+
+    res.setHeader("Cache-Control", "public, max-age=2592000, stale-while-revalidate=604800");
+
+    const etag = response.headers.get("etag");
+    if (etag) {
+      res.setHeader("ETag", etag);
+    }
+
+    await pipeline(Readable.fromWeb(response.body as any), res);
+    return;
+  } catch (error) {
+    if (shouldIgnoreProxyStreamError(error, req, res)) {
+      return;
+    }
+
+    console.error("Image proxy error:", error);
+    return res.status(502).send("Image proxy failed");
+  } finally {
+    req.off("aborted", abortRequest);
+    req.off("close", abortRequest);
+    res.off("close", abortRequest);
+  }
+});
 
 async function postJsonToBackend(path: string, payload: unknown) {
   const response = await fetch(buildBackendUrl(path), {
@@ -551,7 +646,7 @@ async function fetchPublicProducts(): Promise<PublicProduct[]> {
         category: String(product.category || "General").trim(),
         isBestSeller: Boolean(product.isBestSeller),
       }))
-      .filter((product: PublicProduct) => product.id && isPublicCatalogProduct(product));
+      .filter((product: PublicProduct) => product.id);
   } catch (error) {
     console.warn("Could not fetch live products for sitemap.", error);
     return [];

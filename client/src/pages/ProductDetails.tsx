@@ -23,6 +23,10 @@ import {
 } from "@shared/catalog";
 
 export default function ProductDetails() {
+  React.useEffect(() => {
+    void import("./product-details.css");
+  }, []);
+
   const [canonicalMatch, canonicalParams] = useRoute("/producto/:slug");
   const [legacyMatch, legacyParams] = useRoute("/product/:id");
   const [, setLocation] = useLocation();

@@ -1,7 +1,10 @@
-import { Suspense, useEffect, useRef, type ComponentType, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, type ComponentType, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
-import { Toaster } from "@/components/ui/toaster";
+
+const Toaster = lazy(() =>
+  import("@/components/ui/toaster").then((module) => ({ default: module.Toaster })),
+);
 
 const FACEBOOK_PIXEL_ID = "1783051885578047";
 
@@ -51,6 +54,14 @@ function initFacebookPixel() {
   fbq("track", "PageView");
 }
 
+function isMeaningfulInteraction(event: Event) {
+  if (event.type === "scroll") {
+    return typeof window !== "undefined" && window.scrollY > 24;
+  }
+
+  return true;
+}
+
 function RouteFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -72,29 +83,63 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
 
   useEffect(() => {
     if (hasInitializedPixel.current || typeof window === "undefined") return;
-    hasInitializedPixel.current = true;
+    let interactionCleanup = () => {};
+    let fallbackTimeout = 0;
 
-    const bootPixel = () => initFacebookPixel();
-
-    if (document.readyState === "complete") {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(() => bootPixel());
-      } else {
-        window.setTimeout(bootPixel, 1200);
-      }
-      return;
-    }
-
-    const onLoad = () => {
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(() => bootPixel());
-      } else {
-        window.setTimeout(bootPixel, 1200);
-      }
+    const bootPixel = () => {
+      if (hasInitializedPixel.current) return;
+      hasInitializedPixel.current = true;
+      interactionCleanup();
+      if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+      initFacebookPixel();
     };
 
+    const setupDeferredBoot = () => {
+      const interactionEvents: Array<keyof WindowEventMap> = [
+        "pointerdown",
+        "keydown",
+        "touchstart",
+        "scroll",
+      ];
+
+      const onInteraction = (event: Event) => {
+        if (!isMeaningfulInteraction(event)) return;
+        bootPixel();
+      };
+
+      interactionEvents.forEach((eventName) => {
+        window.addEventListener(eventName, onInteraction, {
+          passive: true,
+          once: true,
+        });
+      });
+
+      interactionCleanup = () => {
+        interactionEvents.forEach((eventName) => {
+          window.removeEventListener(eventName, onInteraction);
+        });
+      };
+
+      // Fallback para sesiones sin interacción.
+      fallbackTimeout = window.setTimeout(bootPixel, 8000);
+    };
+
+    if (document.readyState === "complete") {
+      setupDeferredBoot();
+      return () => {
+        interactionCleanup();
+        if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+      };
+    }
+
+    const onLoad = () => setupDeferredBoot();
+
     window.addEventListener("load", onLoad, { once: true });
-    return () => window.removeEventListener("load", onLoad);
+    return () => {
+      window.removeEventListener("load", onLoad);
+      interactionCleanup();
+      if (fallbackTimeout) window.clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -116,7 +161,9 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
           <Routes />
         </Suspense>
       </div>
-      <Toaster />
+      <Suspense fallback={null}>
+        <Toaster />
+      </Suspense>
     </div>
   );
 }

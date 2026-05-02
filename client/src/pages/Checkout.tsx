@@ -163,6 +163,10 @@ function resolveShippingCostBySector(
 }
 
 export default function Checkout() {
+  useEffect(() => {
+    void import("./checkout.css");
+  }, []);
+
   const { items, cartTotal, clearCart, setIsCartOpen, isCartLoading } = useCart();
   const [, setLocation] = useLocation();
   const { data: company } = useCompany();
