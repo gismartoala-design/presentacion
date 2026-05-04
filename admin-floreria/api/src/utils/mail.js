@@ -25,7 +25,7 @@ async function sendAbandonedCartEmail({
   abandonedAt,
   source,
 }) {
-  const adminEmail = recipientEmail || process.env.COMPANY_EMAIL || process.env.ADMIN_EMAIL || "admin@difiori.com.ec";
+  const adminEmail = recipientEmail || process.env.COMPANY_EMAIL || process.env.ADMIN_EMAIL || "ventas@difiori.com.ec";
   const safeTotal = Number(total) || 0;
 
   const itemsHtml = items

@@ -31,10 +31,10 @@ export interface SeoManager {
 }
 
 export const DEFAULT_SEO_STATE: SeoState = {
-  title: "Flores Guayaquil | Floreria en Guayaquil y Ramos de Flores | DIFIORI",
+  title: "Floreria Guayaquil | Flores y Ramos de Flores | DIFIORI",
   description:
-    "Compra flores en Guayaquil, ramos de flores y arreglos florales a domicilio con DIFIORI. Entregas en Guayaquil, Samborondon, Duran y Via a la Costa.",
-  keywords: "flores Guayaquil, florerias en Guayaquil, ramos de flores, arreglos florales Guayaquil, floristeria Guayaquil",
+    "Compra arreglos florales, ramos de flores y regalos a domicilio en Guayaquil con DIFIORI.",
+  keywords: "floreria Guayaquil, flores Guayaquil, florerias en Guayaquil, ramos de flores, arreglos florales Guayaquil",
   path: "/",
   robots: "index, follow",
   image: DEFAULT_SEO_IMAGE,

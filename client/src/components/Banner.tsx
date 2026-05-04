@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { ArrowRight, MessageCircle } from "lucide-react";
+import { useCMS, type HomeHero } from "@/hooks/useCMS";
+import { getResponsiveImageSrcSet, toPublicImageUrl } from "@/lib/media";
 import { DEFAULT_COMPANY } from "@/lib/site";
 import "./banner.css";
 
@@ -12,42 +14,115 @@ const FIXED_BANNER = {
   href: "/#testimonios",
 };
 
+type BannerImage = {
+  url: string;
+  alt: string;
+};
+
 interface BannerProps {
   onTestimonialsClick?: () => void;
 }
 
+function normalizeHeroImages(hero?: HomeHero | null): BannerImage[] {
+  const rawImages = Array.isArray(hero?.images) ? hero?.images : [];
+
+  return rawImages
+    .map((image, index) => {
+      if (typeof image === "string") {
+        return {
+          url: toPublicImageUrl(image),
+          alt: `${hero?.title || FIXED_BANNER.title} - imagen ${index + 1}`,
+        };
+      }
+
+      const url = toPublicImageUrl(image?.url || "");
+      return {
+        url,
+        alt: image?.alt || `${hero?.title || FIXED_BANNER.title} - imagen ${index + 1}`,
+      };
+    })
+    .filter((image) => image.url);
+}
+
 export function Banner({ onTestimonialsClick }: BannerProps) {
+  const { data: hero } = useCMS();
+  const cmsImages = useMemo(() => normalizeHeroImages(hero), [hero]);
+  const fallbackImages = useMemo<BannerImage[]>(
+    () => [
+      {
+        url: FIXED_BANNER.mobileImage,
+        alt: `Floreria DIFIORI - ${FIXED_BANNER.title}`,
+      },
+      {
+        url: FIXED_BANNER.desktopImage,
+        alt: `Floreria DIFIORI - ${FIXED_BANNER.title}`,
+      },
+    ],
+    [],
+  );
+  const carouselImages = cmsImages.length > 0 ? cmsImages : fallbackImages;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const title = hero?.title?.trim() || FIXED_BANNER.title;
+  const subtitle = hero?.description?.trim() || FIXED_BANNER.subtitle;
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [carouselImages.length]);
+
+  useEffect(() => {
+    if (carouselImages.length < 2) return;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % carouselImages.length);
+    }, 5500);
+
+    return () => window.clearInterval(timer);
+  }, [carouselImages.length]);
+
   return (
     <section className="hero-banner">
       <div className="hero-banner-stage">
-        <picture>
-          <source
-            media="(min-width: 768px)"
-            srcSet={FIXED_BANNER.desktopImage}
-            type="image/webp"
-            sizes="100vw"
-          />
-          <source
-            srcSet={FIXED_BANNER.mobileImage}
-            type="image/webp"
-            sizes="100vw"
-          />
-          <img
-            src={FIXED_BANNER.mobileImage}
-            alt={`Floreria DIFIORI - ${FIXED_BANNER.title}`}
-            width={1024}
-            height={571}
-            loading="eager"
-            decoding="async"
-            fetchPriority="high"
-            sizes="100vw"
-            className="hero-banner-image"
-          />
-        </picture>
+        <div className="hero-banner-carousel" aria-hidden={false}>
+          {carouselImages.map((image, index) => {
+            const isActive = index === activeIndex;
+            const srcSet = getResponsiveImageSrcSet(image.url, [768, 1024, 1440, 1920]);
+
+            return (
+              <img
+                key={`${image.url}-${index}`}
+                src={image.url}
+                srcSet={srcSet}
+                alt={image.alt}
+                width={1600}
+                height={900}
+                loading={index === 0 ? "eager" : "lazy"}
+                decoding="async"
+                fetchPriority={index === 0 ? "high" : "low"}
+                sizes="100vw"
+                className={`hero-banner-image ${isActive ? "hero-banner-image-active" : ""}`}
+              />
+            );
+          })}
+        </div>
 
         <div className="hero-banner-overlay hero-banner-overlay-soft" />
         <div className="hero-banner-overlay hero-banner-overlay-gradient" />
         <div className="hero-banner-overlay hero-banner-overlay-desktop" />
+
+        {carouselImages.length > 1 ? (
+          <div className="hero-banner-dots" aria-label="Imagenes del carrusel">
+            {carouselImages.map((image, index) => (
+              <button
+                key={`${image.url}-dot`}
+                type="button"
+                aria-label={`Ver imagen ${index + 1}`}
+                aria-current={index === activeIndex}
+                className="hero-banner-dot"
+                onClick={() => setActiveIndex(index)}
+              />
+            ))}
+          </div>
+        ) : null}
 
         <div className="hero-banner-content-wrap">
           <div className="hero-banner-content-padding">
@@ -56,10 +131,10 @@ export function Banner({ onTestimonialsClick }: BannerProps) {
                 DIFIORI Guayaquil
               </div>
               <h2 className="hero-banner-title">
-                {FIXED_BANNER.title}
+                {title}
               </h2>
               <p className="hero-banner-subtitle">
-                {FIXED_BANNER.subtitle}
+                {subtitle}
               </p>
 
               <div className="hero-banner-actions">

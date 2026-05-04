@@ -157,7 +157,7 @@ export default function Home() {
           addressLocality: "Guayaquil",
           addressCountry: "EC",
         },
-        areaServed: ["Guayaquil", "Samborondon", "Duran", "Via a la Costa"],
+        areaServed: ["Guayaquil"],
         makesOffer: [
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Flores en Guayaquil" } },
           { "@type": "Offer", itemOffered: { "@type": "Product", name: "Ramos de flores" } },
@@ -170,9 +170,9 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-clip bg-background scroll-smooth selection:bg-accent selection:text-white">
       <Seo
-        title="Flores Guayaquil | Floreria en Guayaquil y Ramos de Flores | DIFIORI"
-        description="Compra flores en Guayaquil, ramos de flores y arreglos florales a domicilio con DIFIORI. Entregas en Guayaquil, Samborondon, Duran y Via a la Costa."
-        keywords="flores Guayaquil, florerias en Guayaquil, ramos de flores, arreglos florales Guayaquil, floristeria Guayaquil"
+        title="Floreria Guayaquil | Flores y Ramos de Flores | DIFIORI"
+        description="Compra arreglos florales, ramos de flores y regalos a domicilio en Guayaquil con DIFIORI."
+        keywords="floreria Guayaquil, flores Guayaquil, florerias en Guayaquil, ramos de flores, arreglos florales Guayaquil"
         path="/"
         schema={homeSchema}
       />
@@ -190,8 +190,8 @@ export default function Home() {
               Flores frescas y arreglos florales con entrega a domicilio en Guayaquil.
             </p>
           </a>
-          <a href="/florerias-en-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
-            <h2 className="text-2xl font-semibold text-foreground">Florerias en Guayaquil</h2>
+          <a href="/floreria-guayaquil" className="surface-card p-6 transition-transform hover:-translate-y-1">
+            <h2 className="text-2xl font-semibold text-foreground">Floreria Guayaquil</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/65">
               Floreria DIFIORI para regalos, fechas especiales y pedidos por WhatsApp.
             </p>
