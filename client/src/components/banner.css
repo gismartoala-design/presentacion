@@ -101,6 +101,7 @@
 }
 
 .hero-banner-btn {
+  appearance: none;
   display: inline-flex;
   width: 100%;
   max-width: 230px;
@@ -108,9 +109,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  border: 0;
   border-radius: 999px;
   padding: 0.75rem 1.5rem;
   color: white;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 0.16em;

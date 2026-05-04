@@ -1,6 +1,5 @@
 import React from "react";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { Link } from "wouter";
 import { DEFAULT_COMPANY } from "@/lib/site";
 import "./banner.css";
 
@@ -13,7 +12,11 @@ const FIXED_BANNER = {
   href: "/#testimonios",
 };
 
-export function Banner() {
+interface BannerProps {
+  onTestimonialsClick?: () => void;
+}
+
+export function Banner({ onTestimonialsClick }: BannerProps) {
   return (
     <section className="hero-banner">
       <div className="hero-banner-stage">
@@ -60,13 +63,14 @@ export function Banner() {
               </p>
 
               <div className="hero-banner-actions">
-                <Link
-                  href={FIXED_BANNER.href}
+                <button
+                  type="button"
+                  onClick={onTestimonialsClick || (() => { window.location.href = FIXED_BANNER.href; })}
                   className="hero-banner-btn hero-banner-btn-primary"
                 >
                   {FIXED_BANNER.cta}
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </button>
 
                 <a
                   href={`https://wa.me/${DEFAULT_COMPANY.phoneDigits}`}
