@@ -100,7 +100,7 @@ const SITE_URL =
 const ASSET_BASE_URL =
   normalizeUrl(process.env.APP_PUBLIC_ASSET_URL || process.env.ASSET_BASE_URL || process.env.VITE_ASSET_BASE_URL) ||
   "";
-const DEFAULT_HERO_IMAGE = "/assets/banner_collage.jpg";
+const DEFAULT_HERO_IMAGE = "/assets/banner_collage.webp";
 const HOME_PRODUCT_LIMIT = 8;
 const PAYPHONE_WEB_TOKEN = process.env.PAYPHONE_WEB_TOKEN || process.env.PAYPHONE_TOKEN;
 const PAYPHONE_WEB_STORE_ID = process.env.PAYPHONE_WEB_STORE_ID || process.env.PAYPHONE_STORE_ID;

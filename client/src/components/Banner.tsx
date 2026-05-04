@@ -4,7 +4,8 @@ import { Link } from "wouter";
 import { DEFAULT_COMPANY } from "@/lib/site";
 
 const FIXED_BANNER = {
-  image: "/assets/banner_collage.webp",
+  mobileImage: "/assets/banner_collage_mobile.webp",
+  desktopImage: "/assets/banner_collage_desktop.webp",
   title: "Sorprende hoy. Nosotros lo entregamos por ti.",
   subtitle: "Historias reales de alegria en Guayaquil",
   cta: "Ver testimonios",
@@ -15,17 +16,30 @@ export function Banner() {
   return (
     <section className="relative overflow-hidden bg-[#111]">
       <div className="relative h-[calc(100svh-76px)] min-h-[440px] max-h-[620px] md:h-[82vh] md:min-h-[560px] md:max-h-none">
-        <img
-          src={FIXED_BANNER.image}
-          alt={`Floreria DIFIORI - ${FIXED_BANNER.title}`}
-          width={1024}
-          height={571}
-          loading="eager"
-          decoding="async"
-          fetchPriority="high"
-          sizes="100vw"
-          className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.86]"
-        />
+        <picture>
+          <source
+            media="(min-width: 768px)"
+            srcSet={FIXED_BANNER.desktopImage}
+            type="image/webp"
+            sizes="100vw"
+          />
+          <source
+            srcSet={FIXED_BANNER.mobileImage}
+            type="image/webp"
+            sizes="100vw"
+          />
+          <img
+            src={FIXED_BANNER.mobileImage}
+            alt={`Floreria DIFIORI - ${FIXED_BANNER.title}`}
+            width={1024}
+            height={571}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            sizes="100vw"
+            className="absolute inset-0 h-full w-full object-cover object-center brightness-[0.86]"
+          />
+        </picture>
 
         <div className="absolute inset-0 bg-black/32" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111111]/95 via-[#111111]/34 to-transparent" />
