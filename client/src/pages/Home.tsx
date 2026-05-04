@@ -83,6 +83,21 @@ export default function Home() {
   const [shouldLoadCatalog, setShouldLoadCatalog] = useState(false);
   const [shouldLoadDeferredSections, setShouldLoadDeferredSections] = useState(false);
 
+  const scrollToSection = (id: string) => {
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${id}`);
+  };
+
+  const handleTestimonialsClick = () => {
+    setShouldLoadDeferredSections(true);
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => scrollToSection("testimonios"), 0);
+    });
+  };
+
   useEffect(() => {
     if (shouldLoadCatalog || typeof window === "undefined") return;
     const timer = window.setTimeout(() => setShouldLoadCatalog(true), 1000);
@@ -111,6 +126,18 @@ export default function Home() {
     observer.observe(target);
     return () => observer.disconnect();
   }, [shouldLoadDeferredSections]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const hash = window.location.hash.replace("#", "");
+    if (!["testimonios", "faq", "contacto"].includes(hash)) return;
+
+    setShouldLoadDeferredSections(true);
+    window.requestAnimationFrame(() => {
+      window.setTimeout(() => scrollToSection(hash), 0);
+    });
+  }, []);
 
   const homeSchema = {
     "@context": "https://schema.org",
@@ -152,7 +179,7 @@ export default function Home() {
       <h1 className="sr-only">DIFIORI Flores Guayaquil - Floreria en Guayaquil, Ramos de Flores y Arreglos Florales a Domicilio</h1>
 
       <section className="home-shell-banner-slot">
-        <Banner />
+        <Banner onTestimonialsClick={handleTestimonialsClick} />
       </section>
 
       <div className="home-shell-main">
