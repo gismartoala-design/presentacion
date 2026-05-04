@@ -1,6 +1,5 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { ShoppingBag, Menu, X, Search, Loader2 } from "lucide-react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/context/CartContext";
@@ -9,6 +8,54 @@ import { DEFAULT_COMPANY } from "@/lib/site";
 const SearchOverlay = lazy(() =>
   import("@/components/SearchOverlay").then((module) => ({ default: module.SearchOverlay })),
 );
+
+function IconMenu({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconClose({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSearch({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconBag({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M6 9h12l-1 10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 9Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d="M9 9V7a3 3 0 1 1 6 0v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSpinner({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={cn("animate-spin", className)} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" opacity="0.25" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export function Navbar() {
   const [location, setLocation] = useLocation();
@@ -47,7 +94,7 @@ export function Navbar() {
 
       <nav className="fixed top-0 z-50 w-full border-b border-primary/10 bg-white py-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-1000 sm:py-5 lg:py-7 min-[1440px]:py-8">
         <div className="mx-auto w-full px-6 lg:px-8 min-[1440px]:px-12">
-          <div className="hidden lg:grid grid-cols-[minmax(0,1fr)_clamp(190px,16vw,260px)_minmax(0,1fr)] items-center gap-3 min-[1440px]:gap-5">
+          <div className="hidden grid-cols-[minmax(0,1fr)_clamp(190px,16vw,260px)_minmax(0,1fr)] items-center gap-3 lg:grid min-[1440px]:gap-5">
             <div className="flex min-w-0 items-center justify-start gap-5 min-[1440px]:gap-10">
               {leftLinks.map((link) => (
                 <a
@@ -101,20 +148,15 @@ export function Navbar() {
 
               <div
                 className="flex shrink-0 items-center gap-4 border-l pl-4 transition-colors duration-500 min-[1440px]:gap-8 min-[1440px]:pl-8"
-                style={{
-                  borderLeftColor: "rgba(0,0,0,0.1)",
-                }}
+                style={{ borderLeftColor: "rgba(0,0,0,0.1)" }}
               >
                 <button
                   type="button"
                   aria-label="Buscar productos"
                   onClick={() => setIsSearchOpen(true)}
-                  className={cn(
-                    "transition-all hover:scale-110",
-                    "text-foreground hover:text-accent",
-                  )}
+                  className={cn("transition-all hover:scale-110", "text-foreground hover:text-accent")}
                 >
-                  <Search className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
+                  <IconSearch className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
                 </button>
                 <button
                   type="button"
@@ -127,9 +169,9 @@ export function Navbar() {
                   )}
                 >
                   {isCartNavigating ? (
-                    <Loader2 className="h-6 w-6 animate-spin min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
+                    <IconSpinner className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
                   ) : (
-                    <ShoppingBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" strokeWidth={2} />
+                    <IconBag className="h-6 w-6 min-[1440px]:h-7 min-[1440px]:w-7" />
                   )}
                   <span className="translate-y-[2px] text-xs font-black tracking-widest min-[1440px]:text-sm">({cartItemCount})</span>
                 </button>
@@ -141,13 +183,10 @@ export function Navbar() {
             <button
               type="button"
               aria-label="Abrir menú"
-              className={cn(
-                "flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12",
-                "text-foreground",
-              )}
+              className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12", "text-foreground")}
               onClick={() => setIsOpen(!isOpen)}
             >
-              <Menu className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2} />
+              <IconMenu className="h-7 w-7 sm:h-8 sm:w-8" />
             </button>
 
             <div className="flex min-w-0 justify-center px-2">
@@ -161,12 +200,9 @@ export function Navbar() {
                 type="button"
                 aria-label="Buscar productos"
                 onClick={() => setIsSearchOpen(true)}
-                className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12",
-                  "text-foreground",
-                )}
+                className={cn("flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:h-12 sm:w-12", "text-foreground")}
               >
-                <Search className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+                <IconSearch className="h-6 w-6 sm:h-7 sm:w-7" />
               </button>
               <button
                 type="button"
@@ -179,9 +215,9 @@ export function Navbar() {
                 )}
               >
                 {isCartNavigating ? (
-                  <Loader2 className="h-6 w-6 animate-spin sm:h-7 sm:w-7" strokeWidth={2} />
+                  <IconSpinner className="h-6 w-6 sm:h-7 sm:w-7" />
                 ) : (
-                  <ShoppingBag className="h-6 w-6 sm:h-7 sm:w-7" strokeWidth={2} />
+                  <IconBag className="h-6 w-6 sm:h-7 sm:w-7" />
                 )}
                 {cartItemCount > 0 && !isCartNavigating ? (
                   <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1 translate-x-1 items-center justify-center rounded-full border-2 border-[#fff] bg-accent px-1 text-[9px] font-black leading-none text-white shadow-lg sm:h-5 sm:min-w-5 sm:text-[10px]">
@@ -195,30 +231,30 @@ export function Navbar() {
 
         {isOpen ? (
           <div className="mobile-menu-enter fixed inset-0 z-[100] flex h-screen w-full flex-col bg-background/95 p-8 backdrop-blur-3xl lg:hidden">
-              <div className="mb-16 flex items-center justify-between">
-                <Logo size="sm" variant="dark" />
-                <button
-                  type="button"
-                  aria-label="Cerrar menú"
-                  className="p-2 text-foreground/50 transition-colors hover:text-foreground"
+            <div className="mb-16 flex items-center justify-between">
+              <Logo size="sm" variant="dark" />
+              <button
+                type="button"
+                aria-label="Cerrar menú"
+                className="p-2 text-foreground/50 transition-colors hover:text-foreground"
+                onClick={() => setIsOpen(false)}
+              >
+                <IconClose className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mt-8 flex flex-col items-center gap-8 text-center">
+              {[...leftLinks, ...rightLinks].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-3xl font-serif italic text-foreground/80 transition-colors hover:text-accent"
                   onClick={() => setIsOpen(false)}
                 >
-                  <X strokeWidth={1.5} />
-                </button>
-              </div>
-
-              <div className="mt-8 flex flex-col items-center gap-8 text-center">
-                {[...leftLinks, ...rightLinks].map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    className="text-3xl font-serif italic text-foreground/80 transition-colors hover:text-accent"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                ))}
-              </div>
+                  {link.label}
+                </a>
+              ))}
+            </div>
           </div>
         ) : null}
       </nav>
