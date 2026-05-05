@@ -17,12 +17,29 @@
   inset: 0;
 }
 
+.hero-banner-carousel {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .hero-banner-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
-  filter: brightness(0.9);
+  object-position: center 42%;
+  opacity: 0;
+  filter: brightness(0.94) saturate(1.05) contrast(1.02);
+  transform: scale(1.035);
+  transition:
+    opacity 900ms ease,
+    transform 6200ms ease,
+    filter 900ms ease;
+}
+
+.hero-banner-image-active {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .hero-banner-overlay-soft {
@@ -30,11 +47,49 @@
 }
 
 .hero-banner-overlay-gradient {
-  background: linear-gradient(to top, rgb(17 17 17 / 0.94), rgb(17 17 17 / 0.34), transparent);
+  background:
+    linear-gradient(to top, rgb(17 17 17 / 0.9), rgb(17 17 17 / 0.34), transparent 72%),
+    linear-gradient(to right, rgb(17 17 17 / 0.35), transparent 58%);
 }
 
 .hero-banner-overlay-desktop {
   display: none;
+}
+
+.hero-banner-dots {
+  position: absolute;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: rgb(17 17 17 / 0.26);
+  padding: 0.5rem;
+  backdrop-filter: blur(14px);
+}
+
+.hero-banner-dot {
+  appearance: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.42);
+  cursor: pointer;
+  transition: width 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.hero-banner-dot:hover {
+  transform: scale(1.12);
+  background: rgb(255 255 255 / 0.72);
+}
+
+.hero-banner-dot[aria-current="true"] {
+  width: 1.65rem;
+  background: white;
 }
 
 .hero-banner-content-wrap {
@@ -163,8 +218,17 @@
   .hero-banner-overlay-desktop {
     display: block;
     background:
-      radial-gradient(circle at top, rgb(255 255 255 / 0.06), transparent 42%),
-      linear-gradient(135deg, rgb(17 17 17 / 0.04), rgb(17 17 17 / 0.24));
+      radial-gradient(circle at 68% 30%, rgb(255 255 255 / 0.12), transparent 28%),
+      linear-gradient(135deg, rgb(17 17 17 / 0.08), rgb(17 17 17 / 0.18));
+  }
+
+  .hero-banner-image {
+    object-position: center;
+  }
+
+  .hero-banner-dots {
+    right: 3rem;
+    bottom: 3rem;
   }
 
   .hero-banner-content-wrap {

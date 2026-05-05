@@ -15,6 +15,7 @@ export function ServerRoutes() {
       <Route path="/" component={Home} />
       <Route path="/shop" component={Shop} />
       <Route path="/flores-guayaquil" component={SeoLandingPage} />
+      <Route path="/floreria-guayaquil" component={SeoLandingPage} />
       <Route path="/florerias-en-guayaquil" component={SeoLandingPage} />
       <Route path="/ramos-de-flores" component={SeoLandingPage} />
       <Route path="/categoria/:slug" component={CategoryPage} />

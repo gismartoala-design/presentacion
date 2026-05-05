@@ -19,6 +19,7 @@ import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
 import { renderApp } from "../client/src/server-entry";
 import { DEFAULT_SEO_STATE, renderSeoTags } from "../client/src/components/Seo";
+import { cmsHomeHeroQueryKey, fetchHomeHero } from "../client/src/hooks/useCMS";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
 import { companyQueryKey, fetchCompany } from "../client/src/hooks/useCompany";
 import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts";
@@ -232,6 +233,10 @@ async function prefetchSsrRouteData(queryClient: QueryClient, path: string, base
       queryClient.prefetchQuery({
         queryKey: companyQueryKey,
         queryFn: () => fetchCompany(baseUrl),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: cmsHomeHeroQueryKey,
+        queryFn: () => fetchHomeHero(baseUrl),
       }),
     ]);
 
@@ -608,6 +613,7 @@ type PublicProduct = {
 
 const SEO_LANDING_PATHS = [
   "/flores-guayaquil",
+  "/floreria-guayaquil",
   "/florerias-en-guayaquil",
   "/ramos-de-flores",
 ];

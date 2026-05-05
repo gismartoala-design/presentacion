@@ -10,12 +10,23 @@ const landingPages = {
     path: "/flores-guayaquil",
     title: "Flores Guayaquil | Flores a Domicilio en Guayaquil | DIFIORI",
     description:
-      "Compra flores en Guayaquil con DIFIORI. Ramos de flores, arreglos florales y regalos con entrega a domicilio en Guayaquil, Samborondon, Duran y Via a la Costa.",
+      "Compra flores en Guayaquil con DIFIORI. Ramos de flores, arreglos florales y regalos con entrega a domicilio en Guayaquil.",
     keywords: "flores Guayaquil, flores a domicilio Guayaquil, arreglos florales Guayaquil, comprar flores Guayaquil",
     h1: "Flores en Guayaquil",
     intro:
       "DIFIORI prepara flores frescas, ramos y arreglos florales para entregas a domicilio en Guayaquil. Creamos detalles para cumpleanos, aniversarios, amor, condolencias y regalos especiales.",
     focus: ["Flores frescas seleccionadas", "Entrega a domicilio en Guayaquil", "Pedidos por tienda online o WhatsApp"],
+  },
+  "/floreria-guayaquil": {
+    path: "/floreria-guayaquil",
+    title: "Floreria Guayaquil | Floreria DIFIORI con Entrega a Domicilio",
+    description:
+      "DIFIORI es una floreria en Guayaquil especializada en arreglos florales, ramos de flores y regalos a domicilio.",
+    keywords: "floreria Guayaquil, floreria en Guayaquil, flores Guayaquil, ramos de flores Guayaquil",
+    h1: "Floreria Guayaquil",
+    intro:
+      "DIFIORI es una floreria en Guayaquil con flores frescas, diseno floral y atencion directa para enviar detalles elegantes en la ciudad.",
+    focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
   },
   "/florerias-en-guayaquil": {
     path: "/florerias-en-guayaquil",
@@ -26,7 +37,7 @@ const landingPages = {
     h1: "Floreria en Guayaquil",
     intro:
       "Si buscas florerias en Guayaquil, DIFIORI combina diseno floral, flores frescas y atencion directa para ayudarte a enviar un detalle elegante el mismo dia o en fecha programada.",
-    focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Cobertura en sectores de Guayaquil"],
+    focus: ["Arreglos florales personalizados", "Atencion directa por WhatsApp", "Entrega a domicilio en Guayaquil"],
   },
   "/ramos-de-flores": {
     path: "/ramos-de-flores",
@@ -45,10 +56,12 @@ type LandingPath = keyof typeof landingPages;
 
 function useCurrentLandingPage() {
   const [floresMatch] = useRoute("/flores-guayaquil");
+  const [floreriaMatch] = useRoute("/floreria-guayaquil");
   const [floreriasMatch] = useRoute("/florerias-en-guayaquil");
   const [ramosMatch] = useRoute("/ramos-de-flores");
 
   if (floresMatch) return landingPages["/flores-guayaquil"];
+  if (floreriaMatch) return landingPages["/floreria-guayaquil"];
   if (floreriasMatch) return landingPages["/florerias-en-guayaquil"];
   if (ramosMatch) return landingPages["/ramos-de-flores"];
 
@@ -107,7 +120,7 @@ export default function SeoLandingPage() {
           addressLocality: DEFAULT_COMPANY.city,
           addressCountry: "EC",
         },
-        areaServed: ["Guayaquil", "Samborondon", "Duran", "Via a la Costa"],
+        areaServed: ["Guayaquil"],
       },
     ],
   };
@@ -144,7 +157,7 @@ export default function SeoLandingPage() {
             <div>
               <h2 className="text-lg font-semibold">Cobertura local</h2>
               <p className="mt-2 text-sm leading-relaxed text-foreground/65">
-                Entregamos flores en Guayaquil y coordinamos envios a Samborondon, Duran y Via a la Costa.
+                Entregamos flores, ramos y arreglos florales a domicilio en Guayaquil.
               </p>
             </div>
           </div>
