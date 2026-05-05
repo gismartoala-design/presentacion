@@ -2,8 +2,28 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import { existsSync, readFileSync } from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { metaImagesPlugin } from "./vite-plugin-meta-images";
+
+function getBackendTarget() {
+  const adminEnvPath = path.resolve(import.meta.dirname, "admin-floreria", "api", ".env");
+  if (existsSync(adminEnvPath)) {
+    const envFile = readFileSync(adminEnvPath, "utf8");
+    const portLine = envFile
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("PORT="));
+    const port = portLine?.slice("PORT=".length).trim().replace(/^['"]|['"]$/g, "");
+    if (port && process.env.NODE_ENV !== "production") return `http://localhost:${port}`;
+  }
+
+  if (process.env.BACKEND_URL) return process.env.BACKEND_URL.replace(/\/$/, "");
+
+  return "http://localhost:4000";
+}
+
+const backendTarget = getBackendTarget();
 
 export default defineConfig({
   plugins: [
@@ -53,12 +73,12 @@ export default defineConfig({
     },
     proxy: {
       "/api/external": {
-        target: "http://localhost:4001",
+        target: backendTarget,
         changeOrigin: true,
         secure: false,
       },
       "/uploads": {
-        target: "http://localhost:4001",
+        target: backendTarget,
         changeOrigin: true,
         secure: false,
       },

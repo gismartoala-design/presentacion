@@ -17,6 +17,7 @@ const log = (step, message, data) => {
 };
 
 router.post("/create-order", async (req, res) => {
+  const startedAt = Date.now();
   log("CREATE_ORDER", "Creando orden PayPal desde storefront");
 
   try {
@@ -28,6 +29,7 @@ router.post("/create-order", async (req, res) => {
       clientTransactionId: session.clientTransactionId,
       paypalOrderId: session.paypalOrderId,
       environment: session.environment,
+      durationMs: Date.now() - startedAt,
     });
 
     return res.status(201).json({
@@ -42,7 +44,12 @@ router.post("/create-order", async (req, res) => {
       },
     });
   } catch (error) {
-    log("CREATE_ORDER", "ERROR", { message: error.message, stack: error.stack });
+    log("CREATE_ORDER", "ERROR", {
+      message: error.message,
+      statusCode: error.statusCode,
+      durationMs: Date.now() - startedAt,
+      stack: error.stack,
+    });
     return res.status(error.statusCode || 500).json({
       status: "error",
       message: error.message || "No se pudo crear la orden de PayPal.",
@@ -52,6 +59,7 @@ router.post("/create-order", async (req, res) => {
 });
 
 router.post("/capture", async (req, res) => {
+  const startedAt = Date.now();
   const {
     paypalOrderId,
     token,
@@ -83,10 +91,22 @@ router.post("/capture", async (req, res) => {
         paypalOrderId: result.paypalOrderId || paypalOrderId || token || null,
         captureId: result.captureId || null,
         payerId: result.payerId || null,
+        payerEmail: result.payerEmail || null,
+        expectedPayerEmail: result.expectedPayerEmail || null,
+        emailMismatch: Boolean(result.emailMismatch),
+        message: result.emailMismatch
+          ? "El correo de PayPal que pago no coincide con el correo ingresado en el checkout."
+          : undefined,
+        durationMs: Date.now() - startedAt,
       },
     });
   } catch (error) {
-    log("CAPTURE", "ERROR", { message: error.message, stack: error.stack });
+    log("CAPTURE", "ERROR", {
+      message: error.message,
+      statusCode: error.statusCode,
+      durationMs: Date.now() - startedAt,
+      stack: error.stack,
+    });
     return res.status(error.statusCode || 500).json({
       status: "error",
       message: error.message || "No se pudo capturar el pago de PayPal.",

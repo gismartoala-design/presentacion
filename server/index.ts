@@ -115,8 +115,9 @@ function getAdminBackendUrlFromEnv() {
   return null;
 }
 
+const adminBackendUrl = getAdminBackendUrlFromEnv();
 const BACKEND_ORIGIN = normalizeUrl(
-  process.env.BACKEND_URL || getAdminBackendUrlFromEnv() || "http://localhost:4001"
+  adminBackendUrl || process.env.BACKEND_URL || "http://localhost:4000"
 );
 const SITE_URL =
   normalizeUrl(process.env.APP_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.VITE_SITE_URL) ||
@@ -348,7 +349,6 @@ async function proxyToBackend(req: Request, res: Response) {
   const abortRequest = () => abortController.abort();
 
   req.once("aborted", abortRequest);
-  req.once("close", abortRequest);
   res.once("close", abortRequest);
 
   try {
@@ -404,7 +404,6 @@ async function proxyToBackend(req: Request, res: Response) {
     return res.status(500).json({ status: "error", message: errorMessage });
   } finally {
     req.off("aborted", abortRequest);
-    req.off("close", abortRequest);
     res.off("close", abortRequest);
   }
 }
@@ -418,7 +417,6 @@ app.get("/image-proxy", async (req, res) => {
   const abortRequest = () => abortController.abort();
 
   req.once("aborted", abortRequest);
-  req.once("close", abortRequest);
   res.once("close", abortRequest);
 
   let target: URL;
@@ -471,7 +469,6 @@ app.get("/image-proxy", async (req, res) => {
     return res.status(502).send("Image proxy failed");
   } finally {
     req.off("aborted", abortRequest);
-    req.off("close", abortRequest);
     res.off("close", abortRequest);
   }
 });

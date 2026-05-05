@@ -4,13 +4,55 @@ import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Seo } from "@/components/Seo";
 import { useCart } from "@/context/CartContext";
+import { apiUrl } from "@/lib/api-url";
 
 type ResultStatus = "loading" | "success" | "failed" | "cancelled" | "error";
+
+const PAYMENT_CONFIRM_TIMEOUT_MS = 30000;
+
+async function fetchJsonWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = PAYMENT_CONFIRM_TIMEOUT_MS,
+) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+    const rawBody = await response.text();
+    let data: any = {};
+
+    try {
+      data = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      data = { message: rawBody };
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message || `HTTP ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("La verificacion del pago tardo demasiado. Intenta revisar tu pedido o contactanos.");
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 export default function PaymentResult() {
   const { clearCart } = useCart();
   const [status, setStatus] = useState<ResultStatus>("loading");
   const [orderNumber, setOrderNumber] = useState("");
+  const [resultMessage, setResultMessage] = useState("");
   const confirmed = useRef(false);
 
   useEffect(() => {
@@ -34,16 +76,15 @@ export default function PaymentResult() {
     const finalClientTxId = clientTransactionId || localStorage.getItem("pp_clientTxId");
 
     const finalizePayphoneOrder = async (payload: Record<string, unknown>) => {
-      const response = await fetch("/api/payphone-web/finalize", {
+      return fetchJsonWithTimeout("/api/payphone-web/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      return response.json();
     };
 
     const capturePaypalOrder = async () => {
-      const response = await fetch("/api/external/paypal/capture", {
+      return fetchJsonWithTimeout(apiUrl("/api/external/paypal/capture"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -52,8 +93,6 @@ export default function PaymentResult() {
           cancelled: paypalStatus === "cancelled",
         }),
       });
-
-      return response.json();
     };
 
     const confirmWebBoxInBrowser = async () => {
@@ -70,24 +109,21 @@ export default function PaymentResult() {
         throw new Error("No se encontró el token web de PayPhone para confirmar el pago.");
       }
 
-      const confirmResponse = await fetch("https://pay.payphonetodoesposible.com/api/button/V2/Confirm", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${webToken}`,
+      const confirmData = await fetchJsonWithTimeout(
+        "https://pay.payphonetodoesposible.com/api/button/V2/Confirm",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${webToken}`,
+          },
+          body: JSON.stringify({
+            id: Number(payphoneId),
+            clientTxId: finalClientTxId,
+          }),
         },
-        body: JSON.stringify({
-          id: Number(payphoneId),
-          clientTxId: finalClientTxId,
-        }),
-      });
+      );
 
-      const rawBody = await confirmResponse.text();
-      if (!confirmResponse.ok) {
-        throw new Error(`PayPhone Confirm HTTP ${confirmResponse.status}: ${rawBody}`);
-      }
-
-      const confirmData = JSON.parse(rawBody);
       return finalizePayphoneOrder({
         id: payphoneId,
         clientTransactionId: finalClientTxId,
@@ -126,6 +162,11 @@ export default function PaymentResult() {
           setStatus("cancelled");
           if (!isPaypalFlow) clearPayphoneDraft();
         } else {
+          if (data.data?.emailMismatch) {
+            setResultMessage(
+              "El correo de PayPal que pago no coincide con el correo ingresado en el checkout."
+            );
+          }
           setStatus("failed");
           if (!isPaypalFlow) clearPayphoneDraft();
         }
@@ -242,7 +283,7 @@ export default function PaymentResult() {
         </h2>
         <p className="text-[#E6E6E6]/60 text-sm mb-8">
           {status === "failed"
-            ? "Tu tarjeta fue rechazada. Verifica los datos o intenta con otra tarjeta."
+            ? resultMessage || "Tu tarjeta fue rechazada. Verifica los datos o intenta con otra tarjeta."
             : "Ocurrió un error al procesar el pago. Por favor contáctanos."}
         </p>
         <div className="flex flex-col gap-3">

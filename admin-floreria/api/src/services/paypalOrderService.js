@@ -1,7 +1,7 @@
 const { nanoid } = require("nanoid");
 const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
 
-const PAYPAL_REQUEST_TIMEOUT_MS = 15000;
+const PAYPAL_REQUEST_TIMEOUT_MS = 10000;
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = PAYPAL_REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -21,6 +21,15 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = PAYPAL_REQUEST_TI
     throw error;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+async function readPaypalJson(response) {
+  const rawBody = await response.text();
+  try {
+    return rawBody ? JSON.parse(rawBody) : {};
+  } catch {
+    return { rawBody };
   }
 }
 
@@ -53,6 +62,15 @@ function appendNote(existingValue = "", note) {
   if (!current) return nextNote;
   if (current.includes(nextNote)) return current;
   return `${current} | ${nextNote}`;
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function extractPaypalPayerEmail(orderNotes = "") {
+  const match = String(orderNotes || "").match(/Correo PayPal indicado:\s*([^|]+)/i);
+  return normalizeEmail(match?.[1] || "");
 }
 
 function getPaypalBaseUrl(environment) {
@@ -114,13 +132,7 @@ async function requestPaypalAccessToken({ environment, clientId, clientSecret })
     body: "grant_type=client_credentials",
   });
 
-  const rawBody = await response.text();
-  let data = {};
-  try {
-    data = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    data = { rawBody };
-  }
+  const data = await readPaypalJson(response);
 
   if (!response.ok || !data.access_token) {
     const message =
@@ -288,11 +300,15 @@ async function createPendingPaypalOrder(prisma, payload) {
         couponDiscountCode: appliedCouponCode,
         coupon_discounted_amount: couponDiscountAmount,
         total_discount_amount: couponDiscountAmount,
-        orderNotes: `${storefrontDetails.orderNotes}${
+        orderNotes: [
+          storefrontDetails.orderNotes,
           appliedCouponCode
-            ? ` | Cupon: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})`
-            : ""
-        }`,
+            ? `Cupon: ${appliedCouponCode} (-$${couponDiscountAmount.toFixed(2)})`
+            : "",
+          paypalPayerEmail ? `Correo PayPal indicado: ${normalizeEmail(paypalPayerEmail)}` : "",
+        ]
+          .filter(Boolean)
+          .join(" | "),
       },
     });
 
@@ -319,7 +335,15 @@ async function createPendingPaypalOrder(prisma, payload) {
 }
 
 async function createPaypalCheckoutOrder(prisma, payload) {
+  const startedAt = Date.now();
+  const serviceLog = (step, data = {}) => {
+    console.log(`[PAYPAL_SERVICE][CREATE][${step}]`, JSON.stringify({
+      durationMs: Date.now() - startedAt,
+      ...data,
+    }));
+  };
   const { callbackUrl, cancellationUrl, paypalPayerEmail } = payload;
+  const requiredPaypalPayerEmail = normalizeEmail(paypalPayerEmail);
 
   if (!callbackUrl || !cancellationUrl) {
     const error = new Error("Faltan las URLs de retorno de PayPal.");
@@ -328,14 +352,22 @@ async function createPaypalCheckoutOrder(prisma, payload) {
   }
 
   // Validar formato del correo de PayPal si se proporcionó
-  if (paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail)) {
+  if (!requiredPaypalPayerEmail) {
+    const error = new Error("Ingresa el correo de la cuenta PayPal que usara para pagar.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requiredPaypalPayerEmail)) {
     const error = new Error("El correo de PayPal debe tener un formato válido (ejemplo@dominio.com).");
     error.statusCode = 400;
     throw error;
   }
 
+  serviceLog("settings:start");
   const { company, paymentSettings } = await getPublicCompanyPaymentSettings(prisma);
   const credentials = getActivePaypalCredentials(paymentSettings);
+  serviceLog("settings:done", { environment: credentials.environment });
 
   if (!credentials.clientId || !credentials.clientSecret) {
     const error = new Error(
@@ -345,8 +377,16 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     throw error;
   }
 
+  serviceLog("local-order:start");
   const pendingOrder = await createPendingPaypalOrder(prisma, payload);
+  serviceLog("local-order:done", {
+    orderNumber: pendingOrder.order.orderNumber,
+    clientTransactionId: pendingOrder.clientTransactionId,
+  });
+
+  serviceLog("token:start");
   const accessToken = await requestPaypalAccessToken(credentials);
+  serviceLog("token:done");
   const returnUrl = appendQueryParams(callbackUrl, {
     provider: "paypal",
     clientTransactionId: pendingOrder.clientTransactionId,
@@ -359,10 +399,7 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     orderNumber: pendingOrder.order.orderNumber,
   });
 
-  const payerPayload = paypalPayerEmail
-    ? { payer: { email_address: String(paypalPayerEmail).trim() } }
-    : {};
-
+  serviceLog("paypal-order:start");
   const response = await fetchWithTimeout(`${getPaypalBaseUrl(credentials.environment)}/v2/checkout/orders`, {
     method: "POST",
     headers: {
@@ -372,14 +409,18 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     },
     body: JSON.stringify({
       intent: "CAPTURE",
-      application_context: {
-        brand_name: company.name || "DIFIORI",
-        locale: "es-EC",
-        landing_page: "LOGIN",
-        shipping_preference: "NO_SHIPPING",
-        user_action: "PAY_NOW",
-        return_url: returnUrl,
-        cancel_url: cancelUrl,
+      payment_source: {
+        paypal: {
+          experience_context: {
+            brand_name: company.name || "DIFIORI",
+            locale: "es-EC",
+            landing_page: "LOGIN",
+            shipping_preference: "NO_SHIPPING",
+            user_action: "PAY_NOW",
+            return_url: returnUrl,
+            cancel_url: cancelUrl,
+          },
+        },
       },
       purchase_units: [
         {
@@ -392,17 +433,15 @@ async function createPaypalCheckoutOrder(prisma, payload) {
           },
         },
       ],
-      ...payerPayload,
     }),
   });
 
-  const rawBody = await response.text();
-  let data = {};
-  try {
-    data = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    data = { rawBody };
-  }
+  const data = await readPaypalJson(response);
+  serviceLog("paypal-order:done", {
+    ok: response.ok,
+    status: response.status,
+    paypalOrderId: data.id || null,
+  });
 
   if (!response.ok || !data.id) {
     await prisma.order.update({
@@ -429,6 +468,7 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     ? data.links.find((link) => link.rel === "approve" || link.rel === "payer-action")?.href || ""
     : "";
 
+  serviceLog("local-order:update-start");
   await prisma.order.update({
     where: { id: pendingOrder.order.id },
     data: {
@@ -438,6 +478,7 @@ async function createPaypalCheckoutOrder(prisma, payload) {
       ),
     },
   });
+  serviceLog("local-order:update-done");
 
   return {
     order: pendingOrder.order,
@@ -450,6 +491,13 @@ async function createPaypalCheckoutOrder(prisma, payload) {
 }
 
 async function capturePaypalCheckoutOrder(prisma, payload) {
+  const startedAt = Date.now();
+  const serviceLog = (step, data = {}) => {
+    console.log(`[PAYPAL_SERVICE][CAPTURE][${step}]`, JSON.stringify({
+      durationMs: Date.now() - startedAt,
+      ...data,
+    }));
+  };
   const {
     paypalOrderId,
     token,
@@ -465,8 +513,13 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     throw error;
   }
 
+  serviceLog("local-order:find-start", { clientTransactionId: resolvedClientTransactionId });
   const order = await prisma.order.findUnique({
     where: { clientTransactionId: resolvedClientTransactionId },
+  });
+  serviceLog("local-order:find-done", {
+    found: Boolean(order),
+    paymentStatus: order?.paymentStatus || null,
   });
 
   if (!order) {
@@ -506,8 +559,10 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     };
   }
 
+  serviceLog("settings:start");
   const { paymentSettings } = await getPublicCompanyPaymentSettings(prisma);
   const credentials = getActivePaypalCredentials(paymentSettings);
+  serviceLog("settings:done", { environment: credentials.environment });
 
   if (!credentials.clientId || !credentials.clientSecret) {
     const error = new Error("Las credenciales activas de PayPal no estan configuradas.");
@@ -515,7 +570,11 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     throw error;
   }
 
+  serviceLog("token:start");
   const accessToken = await requestPaypalAccessToken(credentials);
+  serviceLog("token:done");
+
+  serviceLog("capture:start", { paypalOrderId: resolvedPaypalOrderId });
   const response = await fetchWithTimeout(
     `${getPaypalBaseUrl(credentials.environment)}/v2/checkout/orders/${encodeURIComponent(
       resolvedPaypalOrderId
@@ -531,13 +590,12 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     }
   );
 
-  const rawBody = await response.text();
-  let data = {};
-  try {
-    data = rawBody ? JSON.parse(rawBody) : {};
-  } catch {
-    data = { rawBody };
-  }
+  const data = await readPaypalJson(response);
+  serviceLog("capture:done", {
+    ok: response.ok,
+    status: response.status,
+    paypalStatus: data?.status || null,
+  });
 
   if (!response.ok) {
     const error = new Error(
@@ -555,6 +613,10 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     : {};
   const paypalStatus = String(capture.status || data.status || "").toUpperCase();
   const approved = paypalStatus === "COMPLETED";
+  const expectedPayerEmail = extractPaypalPayerEmail(order.orderNotes);
+  const actualPayerEmail = normalizeEmail(
+    data?.payment_source?.paypal?.email_address || data?.payer?.email_address
+  );
   const capturedAmount = Number(
     capture?.amount?.value || purchaseUnit?.amount?.value || 0
   );
@@ -578,10 +640,38 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
       error.statusCode = 400;
       throw error;
     }
+
+    if (expectedPayerEmail && expectedPayerEmail !== actualPayerEmail) {
+      const updatedOrder = await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          paymentStatus: "FAILED",
+          paidAt: null,
+          paymentVerificationNotes: `PayPal: correo no coincide. Esperado: ${expectedPayerEmail}. Pagador real: ${actualPayerEmail || "no disponible"}.`,
+          orderNotes: appendNote(
+            appendNote(order.orderNotes, `PayPal Order ID: ${resolvedPaypalOrderId}`),
+            `PayPal: correo no coincide (${expectedPayerEmail} vs ${actualPayerEmail || "no disponible"}).`
+          ),
+        },
+      });
+
+      return {
+        order: updatedOrder,
+        paymentStatus: "FAILED",
+        approved: false,
+        alreadyProcessed: false,
+        paypalOrderId: resolvedPaypalOrderId,
+        captureId: capture?.id || null,
+        payerId: data?.payer?.payer_id || data?.payment_source?.paypal?.account_id || null,
+        payerEmail: actualPayerEmail,
+        expectedPayerEmail,
+        emailMismatch: true,
+      };
+    }
   }
 
   const newPaymentStatus = approved ? "PAID" : "FAILED";
-  const payerId = data?.payer?.payer_id || null;
+  const payerId = data?.payer?.payer_id || data?.payment_source?.paypal?.account_id || null;
   const captureId = capture?.id || null;
   const updatedOrder = await prisma.order.update({
     where: { id: order.id },
@@ -592,6 +682,7 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
         appendNote(order.orderNotes, `PayPal Order ID: ${resolvedPaypalOrderId}`),
         captureId ? `PayPal Capture ID: ${captureId}` : "",
         payerId ? `PayPal Payer ID: ${payerId}` : "",
+        actualPayerEmail ? `PayPal Payer Email: ${actualPayerEmail}` : "",
         paypalStatus ? `PayPal Status: ${paypalStatus}` : "",
       ]
         .filter(Boolean)
@@ -614,6 +705,9 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
     paypalOrderId: resolvedPaypalOrderId,
     captureId,
     payerId,
+    payerEmail: actualPayerEmail,
+    expectedPayerEmail,
+    emailMismatch: false,
   };
 }
 

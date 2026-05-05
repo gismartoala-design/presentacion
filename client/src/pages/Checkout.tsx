@@ -21,6 +21,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { apiUrl } from "@/lib/api-url";
 import { useCart } from "@/context/CartContext";
 import { useCompany } from "@/hooks/useCompany";
 
@@ -32,6 +33,66 @@ type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
 type CheckoutStep = "sender" | "receiver" | "payment";
 type ShippingSectorRate = { sector: string; cost: number };
 type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement;
+
+const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
+const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 8000;
+
+async function fetchJsonWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+  timeoutMs = CHECKOUT_REQUEST_TIMEOUT_MS,
+) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+    const rawBody = await response.text();
+    let data: any = {};
+
+    try {
+      data = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      data = { message: rawBody };
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message || `HTTP ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("La solicitud tardo demasiado. Verifica tu conexion e intenta nuevamente.");
+    }
+
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+) {
+  let timeoutId = 0;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
 
 function normalizeSectorName(value: string) {
   return value
@@ -274,7 +335,7 @@ export default function Checkout() {
       } = readCheckoutFields();
 
       if (senderName || senderPhone) {
-        fetch("/api/external/store-orders/abandoned", {
+        fetch(apiUrl("/api/external/store-orders/abandoned"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -575,26 +636,29 @@ export default function Checkout() {
       }
 
       if (paymentMethod === "PayPal") {
+        const normalizedPaypalEmail = paypalPayerEmail.trim().toLowerCase();
+        if (!normalizedPaypalEmail) {
+          throw new Error("Ingresa el correo de la cuenta PayPal que usaras para pagar.");
+        }
+
         // Validar correo de PayPal si se proporcionó
-        if (paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail)) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedPaypalEmail)) {
           throw new Error("El correo de PayPal no tiene un formato válido.");
         }
 
-        const response = await fetch("/api/external/paypal/create-order", {
+        const result = await fetchJsonWithTimeout(apiUrl("/api/external/paypal/create-order"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...orderPayload,
             paymentMethod,
-            paypalPayerEmail,
+            paypalPayerEmail: normalizedPaypalEmail,
             callbackUrl: `${window.location.origin}/payment-result?provider=paypal`,
             cancellationUrl: `${window.location.origin}/payment-result?provider=paypal`,
           }),
         });
 
-        const result = await response.json();
-
-        if (!response.ok || result.status !== "success") {
+        if (result.status !== "success") {
           const errorMessage = result.message || "No se pudo iniciar el pago con PayPal.";
 
           // Mensajes específicos para errores comunes de PayPal
@@ -617,7 +681,11 @@ export default function Checkout() {
         // Subir comprobante ANTES de redirigir a PayPal
         if (selectedProofFile) {
           try {
-            await uploadPaymentProofForOrder(createdOrderNumber, selectedProofFile);
+            await withTimeout(
+              uploadPaymentProofForOrder(createdOrderNumber, selectedProofFile),
+              PAYPAL_PROOF_UPLOAD_TIMEOUT_MS,
+              "La subida del comprobante tardo demasiado."
+            );
           } catch (uploadError) {
             console.warn("Error subiendo comprobante, pero continuando con PayPal:", uploadError);
             // No lanzamos error aquí para no bloquear el pago con PayPal
@@ -628,22 +696,17 @@ export default function Checkout() {
           throw new Error("PayPal no devolvio una URL de aprobacion.");
         }
 
-        // Pequeño delay para asegurar que todo esté listo antes de redirigir
-        setTimeout(() => {
-          window.location.assign(approveUrl);
-        }, 100);
+        window.location.assign(approveUrl);
         return;
       }
 
-      const res = await fetch("/api/external/store-orders", {
+      const data = await fetchJsonWithTimeout(apiUrl("/api/external/store-orders"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...orderPayload, paymentMethod }),
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.status === "success") {
+      if (data.status === "success") {
         const createdOrderNumber = data.data?.orderNumber || "DIFIORI-OK";
         setOrderNumber(createdOrderNumber);
         setOrderStatus("success");
@@ -693,8 +756,8 @@ export default function Checkout() {
 
     try {
       const dataUrl = await readFileAsDataUrl(proofFile);
-      const response = await fetch(
-        `/api/external/store-orders/${encodeURIComponent(targetOrderNumber)}/payment-proof`,
+      const data = await fetchJsonWithTimeout(
+        apiUrl(`/api/external/store-orders/${encodeURIComponent(targetOrderNumber)}/payment-proof`),
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -706,8 +769,7 @@ export default function Checkout() {
         }
       );
 
-      const data = await response.json();
-      if (!response.ok || data.status !== "success") {
+      if (data.status !== "success") {
         throw new Error(data.message || "No se pudo subir el comprobante");
       }
 
@@ -1364,9 +1426,10 @@ export default function Checkout() {
                           </div>
                         </div>
                         <label className="block text-sm font-black text-[#4A3362]">
-                          Correo PayPal
+                          Correo PayPal *
                           <input
                             type="email"
+                            required
                             value={paypalPayerEmail}
                             onChange={(e) => setPaypalPayerEmail(e.target.value)}
                             placeholder="correo@ejemplo.com"
@@ -1383,7 +1446,10 @@ export default function Checkout() {
                             </p>
                           )}
                           <p className="mt-2 text-sm font-normal text-[#4A3362]">
-                            Ingresa el correo que usarás en PayPal para prellenar la compra (opcional).
+                            Ingresa el correo de la cuenta PayPal que usaras para pagar.
+                          </p>
+                          <p className="mt-1 text-xs font-semibold text-[#4A3362]">
+                            Debe coincidir con el correo de la cuenta PayPal que completara el pago.
                           </p>
                         </label>
                       </div>
