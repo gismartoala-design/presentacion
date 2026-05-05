@@ -57,6 +57,9 @@ async function buildAll() {
     },
     minify: true,
     external: externals,
+    loader: {
+      ".css": "empty",
+    },
     logLevel: "info",
   });
 }

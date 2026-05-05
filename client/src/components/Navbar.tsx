@@ -1,10 +1,10 @@
+import "./navbar.css";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import { useCart } from "@/context/CartContext";
 import { DEFAULT_COMPANY } from "@/lib/site";
-import "./navbar.css";
 
 const SearchOverlay = lazy(() =>
   import("@/components/SearchOverlay").then((module) => ({ default: module.SearchOverlay })),

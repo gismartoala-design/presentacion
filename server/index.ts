@@ -17,7 +17,6 @@ import {
 } from "../shared/catalog";
 import { createAppQueryClient } from "../client/src/lib/queryClient";
 import { toPublicImageUrl } from "../client/src/lib/media";
-import { renderApp } from "../client/src/server-entry";
 import { DEFAULT_SEO_STATE, renderSeoTags } from "../client/src/components/Seo";
 import { cmsHomeHeroQueryKey, fetchHomeHero } from "../client/src/hooks/useCMS";
 import { categoriesQueryKey, fetchCategories } from "../client/src/hooks/useCategories";
@@ -26,6 +25,7 @@ import { productsQueryKey, fetchProducts } from "../client/src/hooks/useProducts
 import type { Product } from "../client/src/data/mock";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ViteDevServer } from "vite";
+import type { renderApp as renderAppFn } from "../client/src/server-entry";
 
 const app = express();
 const httpServer = createServer(app);
@@ -217,6 +217,17 @@ function shouldSsrPath(path: string) {
     path.startsWith("/categoria/") ||
     path.startsWith("/producto/")
   );
+}
+
+type RenderApp = typeof renderAppFn;
+
+async function loadRenderApp(vite?: ViteDevServer): Promise<RenderApp> {
+  if (vite) {
+    const module = await vite.ssrLoadModule("/src/server-entry.tsx");
+    return module.renderApp as RenderApp;
+  }
+
+  return (await import("../client/src/server-entry")).renderApp;
 }
 
 async function prefetchSsrRouteData(queryClient: QueryClient, path: string, baseUrl: string) {
@@ -795,6 +806,7 @@ app.use((req, res, next) => {
       const queryClient = createAppQueryClient();
       const requestOrigin = buildRequestOrigin(req);
       const statusCode = await prefetchSsrRouteData(queryClient, req.path, requestOrigin);
+      const renderApp = await loadRenderApp(vite);
       const { appHtml, dehydratedState, seo } = renderApp({
         path: req.originalUrl,
         queryClient,
