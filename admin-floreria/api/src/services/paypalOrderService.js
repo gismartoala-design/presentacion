@@ -1,6 +1,29 @@
 const { nanoid } = require("nanoid");
 const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
 
+const PAYPAL_REQUEST_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = PAYPAL_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      const timeoutError = new Error(`Tiempo de espera agotado de PayPal (${timeoutMs} ms).`);
+      timeoutError.statusCode = 504;
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function splitFullName(fullName = "") {
   const trimmed = String(fullName).trim();
   const parts = trimmed.split(/\s+/).filter(Boolean);
@@ -82,7 +105,7 @@ async function getPublicCompanyPaymentSettings(prisma) {
 
 async function requestPaypalAccessToken({ environment, clientId, clientSecret }) {
   const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-  const response = await fetch(`${getPaypalBaseUrl(environment)}/v1/oauth2/token`, {
+  const response = await fetchWithTimeout(`${getPaypalBaseUrl(environment)}/v1/oauth2/token`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${credentials}`,
@@ -205,6 +228,7 @@ async function createPendingPaypalOrder(prisma, payload) {
     total,
     couponCode,
     paymentLabel = "PayPal",
+    paypalPayerEmail,
   } = payload;
 
   if (!receiverName || !senderName || !phone || !total) {
@@ -295,10 +319,17 @@ async function createPendingPaypalOrder(prisma, payload) {
 }
 
 async function createPaypalCheckoutOrder(prisma, payload) {
-  const { callbackUrl, cancellationUrl } = payload;
+  const { callbackUrl, cancellationUrl, paypalPayerEmail } = payload;
 
   if (!callbackUrl || !cancellationUrl) {
     const error = new Error("Faltan las URLs de retorno de PayPal.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Validar formato del correo de PayPal si se proporcionó
+  if (paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail)) {
+    const error = new Error("El correo de PayPal debe tener un formato válido (ejemplo@dominio.com).");
     error.statusCode = 400;
     throw error;
   }
@@ -328,7 +359,11 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     orderNumber: pendingOrder.order.orderNumber,
   });
 
-  const response = await fetch(`${getPaypalBaseUrl(credentials.environment)}/v2/checkout/orders`, {
+  const payerPayload = paypalPayerEmail
+    ? { payer: { email_address: String(paypalPayerEmail).trim() } }
+    : {};
+
+  const response = await fetchWithTimeout(`${getPaypalBaseUrl(credentials.environment)}/v2/checkout/orders`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -337,6 +372,15 @@ async function createPaypalCheckoutOrder(prisma, payload) {
     },
     body: JSON.stringify({
       intent: "CAPTURE",
+      application_context: {
+        brand_name: company.name || "DIFIORI",
+        locale: "es-EC",
+        landing_page: "LOGIN",
+        shipping_preference: "NO_SHIPPING",
+        user_action: "PAY_NOW",
+        return_url: returnUrl,
+        cancel_url: cancelUrl,
+      },
       purchase_units: [
         {
           reference_id: pendingOrder.order.orderNumber,
@@ -348,19 +392,7 @@ async function createPaypalCheckoutOrder(prisma, payload) {
           },
         },
       ],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            brand_name: company.name || "DIFIORI",
-            locale: "es-EC",
-            landing_page: "LOGIN",
-            shipping_preference: "NO_SHIPPING",
-            user_action: "PAY_NOW",
-            return_url: returnUrl,
-            cancel_url: cancelUrl,
-          },
-        },
-      },
+      ...payerPayload,
     }),
   });
 
@@ -484,7 +516,7 @@ async function capturePaypalCheckoutOrder(prisma, payload) {
   }
 
   const accessToken = await requestPaypalAccessToken(credentials);
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `${getPaypalBaseUrl(credentials.environment)}/v2/checkout/orders/${encodeURIComponent(
       resolvedPaypalOrderId
     )}/capture`,

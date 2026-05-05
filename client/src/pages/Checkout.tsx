@@ -189,6 +189,7 @@ export default function Checkout() {
   const [selectedProofFile, setSelectedProofFile] = useState<File | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [proofMessage, setProofMessage] = useState("");
+  const [paypalPayerEmail, setPaypalPayerEmail] = useState("");
   const payphoneBoxStorageKey = "pp_box_payload";
   const transferInstructions =
     company?.settings?.paymentSettings?.transferInstructions ||
@@ -574,12 +575,18 @@ export default function Checkout() {
       }
 
       if (paymentMethod === "PayPal") {
+        // Validar correo de PayPal si se proporcionó
+        if (paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail)) {
+          throw new Error("El correo de PayPal no tiene un formato válido.");
+        }
+
         const response = await fetch("/api/external/paypal/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             ...orderPayload,
             paymentMethod,
+            paypalPayerEmail,
             callbackUrl: `${window.location.origin}/payment-result?provider=paypal`,
             cancellationUrl: `${window.location.origin}/payment-result?provider=paypal`,
           }),
@@ -588,10 +595,18 @@ export default function Checkout() {
         const result = await response.json();
 
         if (!response.ok || result.status !== "success") {
-          throw new Error(
-            result.message ||
-              "No se pudo iniciar el pago con PayPal. Intenta nuevamente."
-          );
+          const errorMessage = result.message || "No se pudo iniciar el pago con PayPal.";
+
+          // Mensajes específicos para errores comunes de PayPal
+          if (errorMessage.includes("correo") || errorMessage.includes("email")) {
+            throw new Error(`Error con el correo de PayPal: ${errorMessage}`);
+          } else if (errorMessage.includes("tiempo de espera") || errorMessage.includes("timeout")) {
+            throw new Error("PayPal está tardando en responder. Verifica tu conexión e intenta nuevamente.");
+          } else if (errorMessage.includes("credenciales") || errorMessage.includes("Client ID")) {
+            throw new Error("Hay un problema técnico con PayPal. Contáctanos por WhatsApp para procesar tu pago.");
+          }
+
+          throw new Error(errorMessage);
         }
 
         const createdOrderNumber = result.data?.orderNumber || "DIFIORI-OK";
@@ -599,15 +614,24 @@ export default function Checkout() {
 
         setOrderNumber(createdOrderNumber);
 
+        // Subir comprobante ANTES de redirigir a PayPal
         if (selectedProofFile) {
-          await uploadPaymentProofForOrder(createdOrderNumber, selectedProofFile);
+          try {
+            await uploadPaymentProofForOrder(createdOrderNumber, selectedProofFile);
+          } catch (uploadError) {
+            console.warn("Error subiendo comprobante, pero continuando con PayPal:", uploadError);
+            // No lanzamos error aquí para no bloquear el pago con PayPal
+          }
         }
 
         if (!approveUrl) {
           throw new Error("PayPal no devolvio una URL de aprobacion.");
         }
 
-        window.location.assign(approveUrl);
+        // Pequeño delay para asegurar que todo esté listo antes de redirigir
+        setTimeout(() => {
+          window.location.assign(approveUrl);
+        }, 100);
         return;
       }
 
@@ -643,11 +667,14 @@ export default function Checkout() {
         setOrderStatus("error");
         abandonmentSent.current = false;
       }
-    } catch {
-      setErrorMsg(
-        "No se pudo conectar con el servidor. Contáctanos por WhatsApp."
-      );
+    } catch (error) {
+      console.error("Error en checkout:", error);
       setOrderStatus("error");
+      setErrorMsg(
+        error instanceof Error
+          ? error.message
+          : "Hubo un error inesperado. Contáctanos por WhatsApp."
+      );
       abandonmentSent.current = false;
     }
   };
@@ -1324,16 +1351,41 @@ export default function Checkout() {
                       </div>
                     )}
                     {paymentMethod === "PayPal" && (
-                      <div className="flex items-start gap-4">
-                        <Globe2 className="mt-1 h-7 w-7 text-[#4A3362]" />
-                        <div>
-                          <p className="text-lg font-black text-[#4A3362]">
-                            Pago internacional o con tarjeta de crédito
-                          </p>
-                          <p className="mt-1 text-base font-black text-[#4A3362]">
-                            Al confirmar te redirigiremos a PayPal para completar el pago de forma segura.
-                          </p>
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-4">
+                          <Globe2 className="mt-1 h-7 w-7 text-[#4A3362]" />
+                          <div>
+                            <p className="text-lg font-black text-[#4A3362]">
+                              Pago internacional o con tarjeta de crédito
+                            </p>
+                            <p className="mt-1 text-base font-black text-[#4A3362]">
+                              Al confirmar te redirigiremos a PayPal para completar el pago de forma segura.
+                            </p>
+                          </div>
                         </div>
+                        <label className="block text-sm font-black text-[#4A3362]">
+                          Correo PayPal
+                          <input
+                            type="email"
+                            value={paypalPayerEmail}
+                            onChange={(e) => setPaypalPayerEmail(e.target.value)}
+                            placeholder="correo@ejemplo.com"
+                            className={cn(
+                              "mt-3 w-full rounded-3xl border bg-[#FAF7FC] px-4 py-3 text-[#4A3362] outline-none transition focus:ring-2",
+                              paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail)
+                                ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                                : "border-[#DCC5E8] focus:border-[#4B1F6F] focus:ring-[#4B1F6F]/20"
+                            )}
+                          />
+                          {paypalPayerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalPayerEmail) && (
+                            <p className="mt-1 text-xs text-red-600">
+                              Formato de correo inválido
+                            </p>
+                          )}
+                          <p className="mt-2 text-sm font-normal text-[#4A3362]">
+                            Ingresa el correo que usarás en PayPal para prellenar la compra (opcional).
+                          </p>
+                        </label>
                       </div>
                     )}
                     {paymentMethod === "Zelle" && (

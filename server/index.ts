@@ -93,7 +93,31 @@ function hydratePayphoneEnvFromAdminEnv() {
 hydrateEnvFile(resolve(process.cwd(), ".env"));
 hydratePayphoneEnvFromAdminEnv();
 
-const BACKEND_ORIGIN = normalizeUrl(process.env.BACKEND_URL || "http://localhost:4001");
+function getAdminBackendUrlFromEnv() {
+  const adminEnvPath = resolve(process.cwd(), "admin-floreria/api/.env");
+  if (!existsSync(adminEnvPath)) return null;
+
+  const envFile = readFileSync(adminEnvPath, "utf8");
+  for (const rawLine of envFile.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const separatorIndex = line.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = line.slice(0, separatorIndex).trim();
+    const value = line.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, "");
+    if (key !== "PORT") continue;
+    if (!value) continue;
+    return `http://localhost:${value}`;
+  }
+
+  return null;
+}
+
+const BACKEND_ORIGIN = normalizeUrl(
+  process.env.BACKEND_URL || getAdminBackendUrlFromEnv() || "http://localhost:4001"
+);
 const SITE_URL =
   normalizeUrl(process.env.APP_PUBLIC_SITE_URL || process.env.SITE_URL || process.env.VITE_SITE_URL) ||
   "https://difiori.com";
@@ -376,7 +400,8 @@ async function proxyToBackend(req: Request, res: Response) {
     }
 
     console.error(`Proxy Error (Store -> Backend) [${req.method} ${backendUrl}]:`, error);
-    return res.status(500).json({ status: "error", message: "Error conectando con el servidor de productos" });
+    const errorMessage = error instanceof Error ? error.message : "Error conectando con el servidor de backend";
+    return res.status(500).json({ status: "error", message: errorMessage });
   } finally {
     req.off("aborted", abortRequest);
     req.off("close", abortRequest);
