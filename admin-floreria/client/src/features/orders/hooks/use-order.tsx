@@ -5,13 +5,35 @@ import ordersService from "../api/orders-service";
 import { useOrdersStore } from "../store/order-store";
 import { LocalDate } from "@/core/utils/date";
 
-const DEFAULT_PAYMENT_STATUS = "PAID";
+const PAID_STATUS_FILTER = "PAID";
+
+function appendOrderFilters(
+  params: URLSearchParams,
+  {
+    status,
+    range,
+    search,
+  }: {
+    status?: string;
+    range?: string;
+    search?: string;
+  }
+) {
+  if (status === PAID_STATUS_FILTER) {
+    params.append("paymentStatus", "PAID");
+  } else if (status && status !== "ALL") {
+    params.append("status", status);
+  }
+
+  if (range) params.append("range", range);
+  if (search) params.append("search", search);
+}
 
 export default function useOrder() {
   const { orders, setOrders, updateOrderStatusState } = useOrdersStore();
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [rangeDateFilter, setRangeDateFilter] = useState("today");
   const [dateFilterStart, setDateFilterStart] = useState<LocalDate | undefined>(undefined);
   const [dateFilterEnd, setDateFilterEnd] = useState<LocalDate | undefined>(undefined);
@@ -22,9 +44,6 @@ export default function useOrder() {
     try {
       setIsLoading(true);
       const normalizedParams = new URLSearchParams(params);
-      if (!normalizedParams.has("paymentStatus")) {
-        normalizedParams.append("paymentStatus", DEFAULT_PAYMENT_STATUS);
-      }
       const response = await ordersService.get_all_orders(normalizedParams);
       if (response.status === "success" && response.data) {
         setOrders(response.data);
@@ -39,13 +58,11 @@ export default function useOrder() {
 
   const fetchWithCurrentFilters = useCallback(async (overrides?: Record<string, string>) => {
     const params = new URLSearchParams();
-    const status = overrides?.status ?? statusFilter;
-    const range = overrides?.range ?? rangeDateFilter;
-    const q = overrides?.search ?? search;
-
-    if (status && status !== "ALL") params.append("status", status);
-    if (range) params.append("range", range);
-    if (q) params.append("search", q);
+    appendOrderFilters(params, {
+      status: overrides?.status ?? statusFilter,
+      range: overrides?.range ?? rangeDateFilter,
+      search: overrides?.search ?? search,
+    });
 
     await fecthOrderWithParams(params);
   }, [statusFilter, rangeDateFilter, search, fecthOrderWithParams]);
@@ -53,18 +70,22 @@ export default function useOrder() {
   const handleStatusFilterChange = useCallback((value: string) => {
     setStatusFilter(value);
     const params = new URLSearchParams();
-    if (value && value !== "ALL") params.append("status", value);
-    if (rangeDateFilter) params.append("range", rangeDateFilter);
-    if (search) params.append("search", search);
+    appendOrderFilters(params, {
+      status: value,
+      range: rangeDateFilter,
+      search,
+    });
     fecthOrderWithParams(params);
   }, [rangeDateFilter, search, fecthOrderWithParams]);
 
   const handleRangeFilterChange = useCallback((value: string) => {
     setRangeDateFilter(value);
     const params = new URLSearchParams();
-    if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
-    if (value) params.append("range", value);
-    if (search) params.append("search", search);
+    appendOrderFilters(params, {
+      status: statusFilter,
+      range: value,
+      search,
+    });
     fecthOrderWithParams(params);
   }, [statusFilter, search, fecthOrderWithParams]);
 
@@ -73,9 +94,11 @@ export default function useOrder() {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
       const params = new URLSearchParams();
-      if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
-      if (rangeDateFilter) params.append("range", rangeDateFilter);
-      if (value) params.append("search", value);
+      appendOrderFilters(params, {
+        status: statusFilter,
+        range: rangeDateFilter,
+        search: value,
+      });
       fecthOrderWithParams(params);
     }, 350);
   }, [statusFilter, rangeDateFilter, fecthOrderWithParams]);
@@ -245,6 +268,7 @@ export default function useOrder() {
 
   const statusOptions = [
     { value: "ALL",       label: "Todos los estados" },
+    { value: "PAID",      label: "Pagados" },
     { value: "PENDING",   label: "Pendiente" },
     { value: "CONFIRMED", label: "Confirmado" },
     { value: "PREPARING", label: "Preparando" },
@@ -280,6 +304,5 @@ export default function useOrder() {
     getPaymentStatusColor,
     getPaymentStatusText,
     statusOptions,
-    defaultPaymentStatus: DEFAULT_PAYMENT_STATUS,
   };
 }

@@ -72,6 +72,48 @@ function roundMoney(amount) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
 }
 
+function getVisibleStorefrontOrdersFilter() {
+  const payphoneMethods = [
+    { orderNotes: { contains: "PayPhone" } },
+    { orderNotes: { contains: "Payphone" } },
+    { orderNotes: { contains: "payphone" } },
+  ];
+  const paypalMethods = [
+    { orderNotes: { contains: "PayPal" } },
+    { orderNotes: { contains: "Paypal" } },
+    { orderNotes: { contains: "paypal" } },
+  ];
+  const bankMethods = [
+    { orderNotes: { contains: "Banco" } },
+    { orderNotes: { contains: "banco" } },
+  ];
+  const zelleMethods = [
+    { orderNotes: { contains: "Zelle" } },
+    { orderNotes: { contains: "zelle" } },
+  ];
+  const knownPaymentMethods = [
+    ...payphoneMethods,
+    ...paypalMethods,
+    ...bankMethods,
+    ...zelleMethods,
+  ];
+
+  return {
+    OR: [
+      {
+        AND: [
+          { OR: payphoneMethods },
+          { paymentStatus: "PAID" },
+        ],
+      },
+      { OR: paypalMethods },
+      { OR: bankMethods },
+      { OR: zelleMethods },
+      { NOT: { OR: knownPaymentMethods } },
+    ],
+  };
+}
+
 function serializeOrder(order) {
   const totalAmount = Number(order.total || 0);
   const itemsAmount = order.orderItems.reduce((total, item) => {
@@ -111,7 +153,9 @@ exports.getAllOrders = async (req, res) => {
     const dateStart = req.query.dateStart;
     const dateEnd = req.query.dateEnd;
 
-    const where = {};
+    const where = {
+      AND: [getVisibleStorefrontOrdersFilter()],
+    };
     let take;
 
     if (!isNaN(limit) && limit > 0) {
@@ -119,24 +163,28 @@ exports.getAllOrders = async (req, res) => {
     }
 
     if (status) {
-      where.status = status;
+      where.AND.push({ status });
     }
 
     if (paymentStatus) {
-      where.paymentStatus = paymentStatus;
+      where.AND.push({ paymentStatus });
     }
 
     if (search) {
-      where.OR = [
-        { customerName: { contains: search, mode: "insensitive" } },
-        {
-          customerEmail: {
-            not: null,
-            contains: search,
-            mode: "insensitive",
+      where.AND.push({
+        OR: [
+          { customerName: { contains: search, mode: "insensitive" } },
+          {
+            customerEmail: {
+              not: null,
+              contains: search,
+              mode: "insensitive",
+            },
           },
-        },
-      ];
+          { orderNumber: { contains: search, mode: "insensitive" } },
+          { orderNotes: { contains: search } },
+        ],
+      });
     }
 
     if (dateStart || dateEnd) {
@@ -164,7 +212,7 @@ exports.getAllOrders = async (req, res) => {
         dateFilter.lt = endDate;
       }
 
-      where.createdAt = dateFilter;
+      where.AND.push({ createdAt: dateFilter });
     } else if (range) {
       switch (range) {
         case "today": {
@@ -172,7 +220,7 @@ exports.getAllOrders = async (req, res) => {
           start.setUTCHours(0, 0, 0, 0);
           const end = new Date(start);
           end.setUTCDate(end.getUTCDate() + 1);
-          where.createdAt = { gte: start, lt: end };
+          where.AND.push({ createdAt: { gte: start, lt: end } });
           break;
         }
         case "this_week": {
@@ -182,7 +230,7 @@ exports.getAllOrders = async (req, res) => {
           start.setUTCHours(0, 0, 0, 0);
           const end = new Date(start);
           end.setUTCDate(end.getUTCDate() + 7);
-          where.createdAt = { gte: start, lt: end };
+          where.AND.push({ createdAt: { gte: start, lt: end } });
           break;
         }
         case "this_month": {
@@ -191,7 +239,7 @@ exports.getAllOrders = async (req, res) => {
           start.setUTCHours(0, 0, 0, 0);
           const end = new Date(start);
           end.setUTCMonth(end.getUTCMonth() + 1);
-          where.createdAt = { gte: start, lt: end };
+          where.AND.push({ createdAt: { gte: start, lt: end } });
           break;
         }
         case "this_year": {
@@ -200,7 +248,7 @@ exports.getAllOrders = async (req, res) => {
           start.setUTCHours(0, 0, 0, 0);
           const end = new Date(start);
           end.setUTCFullYear(end.getUTCFullYear() + 1);
-          where.createdAt = { gte: start, lt: end };
+          where.AND.push({ createdAt: { gte: start, lt: end } });
           break;
         }
       }

@@ -8,6 +8,29 @@ import { OrdersTable } from "../components/orders-table";
 import { OrderDetailsDialog } from "../components/order-details-dialog";
 
 const AUTO_REFRESH_MS = 60_000;
+const PAID_STATUS_FILTER = "PAID";
+
+function appendOrderFilters(
+  params: URLSearchParams,
+  {
+    status,
+    range,
+    search,
+  }: {
+    status?: string;
+    range?: string;
+    search?: string;
+  }
+) {
+  if (status === PAID_STATUS_FILTER) {
+    params.append("paymentStatus", "PAID");
+  } else if (status && status !== "ALL") {
+    params.append("status", status);
+  }
+
+  if (range) params.append("range", range);
+  if (search) params.append("search", search);
+}
 
 export default function OrdersPage() {
   const {
@@ -34,7 +57,6 @@ export default function OrdersPage() {
     getPaymentStatusColor,
     getPaymentStatusText,
     statusOptions,
-    defaultPaymentStatus,
     fecthOrderWithParams,
     fetchWithCurrentFilters,
   } = useOrder();
@@ -76,9 +98,11 @@ export default function OrdersPage() {
 
   const handleAdvancedApply = async () => {
     const params = new URLSearchParams();
-    if (statusFilter && statusFilter !== "ALL") params.append("status", statusFilter);
-    if (rangeDateFilter) params.append("range", rangeDateFilter);
-    if (search) params.append("search", search);
+    appendOrderFilters(params, {
+      status: statusFilter,
+      range: rangeDateFilter,
+      search,
+    });
     if (dateFilterStart && dateFilterEnd) {
       params.append("dateStart", dateFilterStart.toLocalISODateString().slice(0, 10));
       params.append("dateEnd", dateFilterEnd.toLocalISODateString().slice(0, 10));
@@ -115,9 +139,8 @@ export default function OrdersPage() {
   );
 
   const hasAdvancedActive = !!(dateFilterStart || dateFilterEnd || minAmount || maxAmount);
-  const visibleOrders = orders.filter(
-    (order) => order.paymentStatus === defaultPaymentStatus
-  );
+  const visibleOrders = orders;
+  const orderStatusOptions = statusOptions.filter((option) => option.value !== PAID_STATUS_FILTER);
 
   // Mostrar spinner de pantalla completa solo en la carga inicial (sin datos aún)
   if (isLoading && !hasLoadedOnce.current) {
@@ -174,7 +197,7 @@ export default function OrdersPage() {
         <OrdersBulkActions
           count={selectedOrders.length}
           onClear={clearSelection}
-          statusOptions={statusOptions}
+          statusOptions={orderStatusOptions}
           onUpdateMany={updateMultipleOrderStatus}
           onExport={() => {/* TODO export */}}
         />
@@ -202,7 +225,7 @@ export default function OrdersPage() {
               onOpen={openOrder}
               onChangeStatus={updateOrderStatus}
               onMarkAsPaid={handleMarkAsPaid}
-              statusOptions={statusOptions}
+              statusOptions={orderStatusOptions}
               isLoading={isLoading && hasLoadedOnce.current}
             />
           </div>
@@ -220,7 +243,7 @@ export default function OrdersPage() {
         getPaymentStatusText={getPaymentStatusText}
         onUpdatePaymentStatus={updatePaymentStatus}
         onChangeStatus={updateOrderStatus}
-        statusOptions={statusOptions}
+        statusOptions={orderStatusOptions}
       />
     </div>
   );
