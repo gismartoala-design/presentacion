@@ -1,4 +1,5 @@
 const { nanoid } = require("nanoid");
+const emailService = require("./emailService");
 const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
 
 function splitFullName(fullName = "") {
@@ -179,6 +180,38 @@ async function createPendingPayphoneOrder(prisma, payload) {
 
     return newOrder;
   });
+
+  try {
+    await emailService.sendNewOrderAlert({
+      orderNumber: order.orderNumber,
+      customerName: senderName,
+      customerEmail: storefrontDetails.senderEmail,
+      customerPhone: storefrontDetails.senderPhone || phone,
+      billingContactName: storefrontDetails.receiverName,
+      receiverPhone,
+      billingPrincipalAddress: storefrontDetails.exactAddress || "No especificado",
+      billingCity: sector || "",
+      subtotal: Number(total) - Number(shippingCost || 0) - couponDiscountAmount,
+      tax: 0,
+      shipping: Number(shippingCost || 0),
+      total: finalTotal,
+      paymentStatus: "PENDING",
+      paymentMethod: paymentLabel,
+      deliveryDateTime,
+      cardMessage,
+      observations,
+      couponCode: appliedCouponCode,
+      items: [
+        {
+          productName: productName || "Producto DIFIORI",
+          quantity: Number(quantity),
+          price: parseCurrencyLikeValue(productPrice),
+        },
+      ],
+    });
+  } catch (emailError) {
+    console.error("PayPhone new order alert email error:", emailError);
+  }
 
   return {
     order,

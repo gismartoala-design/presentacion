@@ -208,6 +208,118 @@ class EmailService {
     }
   }
 
+  async sendNewOrderAlert(orderData) {
+    try {
+      const recipientEmail =
+        orderData.recipientEmail ||
+        process.env.OWNER_NOTIFICATION_EMAIL ||
+        process.env.COMPANY_EMAIL ||
+        "ventas@difiori.com.ec";
+
+      const escapeHtml = (value) =>
+        String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+
+      const items = Array.isArray(orderData.items) ? orderData.items : [];
+      const total = Number(orderData.total || 0);
+      const subtotal = Number(orderData.subtotal || 0);
+      const shipping = Number(orderData.shipping || 0);
+
+      const details = [
+        ["Pedido", orderData.orderNumber],
+        ["Estado de pago", orderData.paymentStatus || "PENDING"],
+        ["Metodo de pago", orderData.paymentMethod || orderData.paymentLabel],
+        ["Quien envia", orderData.customerName],
+        ["Correo", orderData.customerEmail],
+        ["Telefono", orderData.customerPhone],
+        ["Quien recibe", orderData.billingContactName || orderData.receiverName],
+        ["Telefono receptor", orderData.receiverPhone],
+        ["Direccion", orderData.billingPrincipalAddress || orderData.exactAddress],
+        ["Sector", orderData.billingCity || orderData.sector],
+        ["Fecha de entrega", orderData.deliveryDateTime],
+        ["Mensaje de tarjeta", orderData.cardMessage || orderData.deliveryNotes],
+        ["Observaciones", orderData.observations || orderData.customerReference],
+        ["Cupon", orderData.couponCode || orderData.couponDiscountCode],
+      ].filter(([, value]) => value && String(value).trim() !== "");
+
+      const detailsHtml = details
+        .map(([label, value]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</p>`)
+        .join("");
+      const detailsText = details.map(([label, value]) => `${label}: ${value}`).join("\n");
+
+      const itemsHtml = items.length
+        ? items
+            .map((item) => {
+              const name = item.productName || item.name || "Producto DIFIORI";
+              const quantity = Number(item.quantity || 1);
+              const price = Number(item.price || 0);
+              return `<li><strong>${escapeHtml(name)}</strong> - ${quantity} x $${price.toFixed(2)}</li>`;
+            })
+            .join("")
+        : "<li>Sin productos detallados</li>";
+
+      const itemsText = items.length
+        ? items
+            .map((item) => {
+              const name = item.productName || item.name || "Producto DIFIORI";
+              return `- ${name} | Cant: ${item.quantity || 1} | Precio: $${Number(item.price || 0).toFixed(2)}`;
+            })
+            .join("\n")
+        : "- Sin productos detallados";
+
+      const whatsappPhone = String(orderData.customerPhone || orderData.phone || "")
+        .replace(/[^0-9]/g, "");
+      const whatsappLink = whatsappPhone
+        ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
+            `Hola, te escribimos de DIFIORI por tu pedido ${orderData.orderNumber}.`
+          )}`
+        : "";
+
+      const mailOptions = {
+        from: getDefaultFrom(),
+        to: recipientEmail,
+        subject: `Nuevo pedido DIFIORI - ${orderData.orderNumber}`,
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:0 auto;color:#222;border:1px solid #eee;padding:20px;border-radius:10px;">
+            <h2 style="margin:0 0 10px;color:#77472b;">Nuevo pedido recibido</h2>
+            <p style="margin:0 0 18px;">Se registro un nuevo pedido en la tienda DIFIORI.</p>
+            ${detailsHtml}
+            <hr style="border:0;border-top:1px solid #eee;margin:18px 0;" />
+            <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
+            <p><strong>Envio / reserva:</strong> $${shipping.toFixed(2)}</p>
+            <p style="font-size:18px;"><strong>Total:</strong> $${total.toFixed(2)}</p>
+            <h3 style="margin-top:18px;">Productos</h3>
+            <ul>${itemsHtml}</ul>
+            ${
+              whatsappLink
+                ? `<p style="margin-top:24px;"><a href="${whatsappLink}" style="display:inline-block;background:#25D366;color:#fff;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:bold;">Contactar por WhatsApp</a></p>`
+                : ""
+            }
+            <p style="margin-top:24px;font-size:12px;color:#777;">Aviso automatico de pedidos DIFIORI.</p>
+          </div>
+        `,
+        text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${subtotal.toFixed(2)}\nEnvio / reserva: $${shipping.toFixed(2)}\nTotal: $${total.toFixed(2)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log("New order alert sent successfully:", result.messageId);
+
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error("Error sending new order alert:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
   async sendDiscountCodeEmail(discount_code, customerEmail) {
     try {
       console.log("Sending discount code email:", discount_code);

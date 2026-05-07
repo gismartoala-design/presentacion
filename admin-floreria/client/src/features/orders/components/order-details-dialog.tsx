@@ -454,11 +454,26 @@ export function OrderDetailsDialog({
                 {order.orderItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between gap-3 rounded-xl border bg-white px-4 py-3"
+                    className="space-y-2"
                   >
+                    <div className="rounded-xl border bg-gray-50 p-3">
+                      {item.product.image ? (
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="h-40 w-full rounded-lg object-contain"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-40 w-full items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white">
+                          <Package className="h-8 w-8 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-start justify-between gap-3 rounded-xl border bg-white px-4 py-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-medium text-gray-900">
+                        <span className="min-w-0 break-words text-sm font-medium leading-snug text-gray-900">
                           {item.product.name}
                         </span>
                         {item.variantName && (
@@ -482,9 +497,10 @@ export function OrderDetailsDialog({
                         {item.quantity} × ${item.price.toFixed(2)}
                       </p>
                     </div>
-                    <p className="shrink-0 text-sm font-bold text-green-700">
+                    <p className="shrink-0 pt-1 text-sm font-bold text-green-700">
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
+                    </div>
                   </div>
                 ))}
               </div>

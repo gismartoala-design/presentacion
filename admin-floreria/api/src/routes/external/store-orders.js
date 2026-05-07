@@ -279,6 +279,54 @@ router.post("/", async (req, res) => {
       return newOrder;
     });
 
+    const customerName =
+      [senderName, receiverName].find((value) => value && String(value).trim()) ||
+      "Cliente DIFIORI";
+
+    const emailData = {
+      orderNumber: order.orderNumber,
+      customerName,
+      customerEmail: storefrontDetails.senderEmail,
+      customerPhone: storefrontDetails.senderPhone || phone,
+      billingContactName: receiverName || senderName || customerName,
+      receiverPhone,
+      billingPrincipalAddress: storefrontDetails.exactAddress || "No especificado",
+      billingCity: sector || "",
+      subtotal: parseMoney(total) - parseMoney(shippingCost) - couponDiscountAmount,
+      tax: 0,
+      shipping: parseMoney(shippingCost),
+      total: parseMoney(total) - couponDiscountAmount,
+      paymentStatus: "PENDING",
+      paymentMethod,
+      deliveryDateTime,
+      cardMessage,
+      observations,
+      couponCode: appliedCouponCode,
+      createdAt: new Date(order.createdAt).toLocaleDateString("es-EC", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      companyName: process.env.COMPANY_NAME || "DIFIORI",
+      companyEmail: process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
+      companyPhone: process.env.COMPANY_PHONE || "",
+      items: [
+        {
+          productName: productName || "Producto DIFIORI",
+          variantName: null,
+          quantity: Number(quantity || 1),
+          price: parseMoney(productPrice),
+          productImage: null,
+        },
+      ],
+    };
+
+    try {
+      await emailService.sendNewOrderAlert(emailData);
+    } catch (emailError) {
+      console.error("Store new order alert email error:", emailError);
+    }
+
     if (storefrontDetails.senderEmail) {
       try {
         const activeCompany = await prisma.company.findFirst({
@@ -286,43 +334,16 @@ router.post("/", async (req, res) => {
           select: { name: true, email: true, phone: true },
         });
 
-        const customerName =
-          [senderName, receiverName].find((value) => value && String(value).trim()) ||
-          "Cliente DIFIORI";
-
-        const emailData = {
+        const confirmationEmailData = {
+          ...emailData,
           orderNumber: order.orderNumber,
-          customerName,
-          customerEmail: storefrontDetails.senderEmail,
-          customerPhone: storefrontDetails.senderPhone,
-          billingContactName: receiverName || senderName || customerName,
-          billingPrincipalAddress: storefrontDetails.exactAddress || "No especificado",
-          billingCity: sector || "",
-          subtotal: parseMoney(total) - parseMoney(shippingCost),
-          tax: 0,
-          shipping: parseMoney(shippingCost),
-          total: parseMoney(total),
-          createdAt: new Date(order.createdAt).toLocaleDateString("es-EC", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          }),
           companyName: activeCompany?.name || process.env.COMPANY_NAME || "DIFIORI",
           companyEmail:
             activeCompany?.email || process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
           companyPhone: activeCompany?.phone || process.env.COMPANY_PHONE || "",
-          items: [
-            {
-              productName: productName || "Producto DIFIORI",
-              variantName: null,
-              quantity: Number(quantity || 1),
-              price: parseMoney(productPrice),
-              productImage: null,
-            },
-          ],
         };
 
-        await emailService.sendOrderConfirmation(emailData);
+        await emailService.sendOrderConfirmation(confirmationEmailData);
       } catch (emailError) {
         console.error("Store order confirmation email error:", emailError);
       }

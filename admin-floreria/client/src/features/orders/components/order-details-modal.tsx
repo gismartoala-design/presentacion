@@ -86,11 +86,26 @@ export default function OrderDetailsModal({
               {order.orderItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg border"
+                  className="space-y-2"
                 >
-                  <div className="flex-1">
+                  <div className="rounded-lg border bg-white p-3">
+                    {item.product.image ? (
+                      <img
+                        src={item.product.image}
+                        alt={item.product.name}
+                        className="h-48 w-full rounded-lg object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="h-48 w-full rounded-lg border border-dashed border-gray-200 bg-gray-50" />
+                    )}
+                  </div>
+                  <div className="flex items-start justify-between gap-3 rounded-lg border bg-gray-50 p-3">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium text-lg">{item.product.name}</p>
+                      <p className="break-words font-medium text-lg leading-snug">
+                        {item.product.name}
+                      </p>
                       {item.variantName && (
                         <span className="bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full font-medium">
                           {item.variantName}
@@ -110,6 +125,7 @@ export default function OrderDetailsModal({
                     <p className="font-bold text-lg text-green-600">
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
+                  </div>
                   </div>
                 </div>
               ))}
