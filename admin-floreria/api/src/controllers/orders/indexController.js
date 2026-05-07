@@ -105,6 +105,7 @@ exports.getAllOrders = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit);
     const status = req.query.status;
+    const paymentStatus = req.query.paymentStatus;
     const search = req.query.search;
     const range = req.query.range;
     const dateStart = req.query.dateStart;
@@ -119,6 +120,10 @@ exports.getAllOrders = async (req, res) => {
 
     if (status) {
       where.status = status;
+    }
+
+    if (paymentStatus) {
+      where.paymentStatus = paymentStatus;
     }
 
     if (search) {

@@ -5,6 +5,8 @@ import ordersService from "../api/orders-service";
 import { useOrdersStore } from "../store/order-store";
 import { LocalDate } from "@/core/utils/date";
 
+const DEFAULT_PAYMENT_STATUS = "PAID";
+
 export default function useOrder() {
   const { orders, setOrders, updateOrderStatusState } = useOrdersStore();
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +21,11 @@ export default function useOrder() {
   const fecthOrderWithParams = useCallback(async (params: URLSearchParams) => {
     try {
       setIsLoading(true);
-      const response = await ordersService.get_all_orders(params);
+      const normalizedParams = new URLSearchParams(params);
+      if (!normalizedParams.has("paymentStatus")) {
+        normalizedParams.append("paymentStatus", DEFAULT_PAYMENT_STATUS);
+      }
+      const response = await ordersService.get_all_orders(normalizedParams);
       if (response.status === "success" && response.data) {
         setOrders(response.data);
       }
@@ -274,5 +280,6 @@ export default function useOrder() {
     getPaymentStatusColor,
     getPaymentStatusText,
     statusOptions,
+    defaultPaymentStatus: DEFAULT_PAYMENT_STATUS,
   };
 }

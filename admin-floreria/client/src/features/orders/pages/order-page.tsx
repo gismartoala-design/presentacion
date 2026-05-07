@@ -34,6 +34,7 @@ export default function OrdersPage() {
     getPaymentStatusColor,
     getPaymentStatusText,
     statusOptions,
+    defaultPaymentStatus,
     fecthOrderWithParams,
     fetchWithCurrentFilters,
   } = useOrder();
@@ -114,6 +115,9 @@ export default function OrdersPage() {
   );
 
   const hasAdvancedActive = !!(dateFilterStart || dateFilterEnd || minAmount || maxAmount);
+  const visibleOrders = orders.filter(
+    (order) => order.paymentStatus === defaultPaymentStatus
+  );
 
   // Mostrar spinner de pantalla completa solo en la carga inicial (sin datos aún)
   if (isLoading && !hasLoadedOnce.current) {
@@ -138,7 +142,7 @@ export default function OrdersPage() {
             )}
           </div>
           <p className="text-gray-600 mt-1">
-            {orders.length} pedido{orders.length !== 1 ? "s" : ""} cargados
+            {visibleOrders.length} pedido{visibleOrders.length !== 1 ? "s" : ""} cargados
           </p>
         </header>
 
@@ -178,18 +182,18 @@ export default function OrdersPage() {
         <section className="bg-white rounded-xl shadow-sm border">
           <div className="flex items-center justify-between p-6 border-b">
             <h2 className="text-lg font-semibold text-gray-900">Lista de Pedidos</h2>
-            <span className="text-sm text-gray-400">{orders.length} resultados</span>
+            <span className="text-sm text-gray-400">{visibleOrders.length} resultados</span>
           </div>
           <div className="p-6">
             <OrdersTable
-              items={orders}
+              items={visibleOrders}
               selectedIds={selectedOrders}
               onToggleSelect={toggleOrderSelection}
               onTogglePage={(ids) => setSelectedOrders(ids)}
               allPageSelected={
                 selectedOrders.length > 0 &&
-                selectedOrders.length === orders.length &&
-                orders.length > 0
+                selectedOrders.length === visibleOrders.length &&
+                visibleOrders.length > 0
               }
               getStatusColor={getStatusColor}
               getStatusText={getStatusText}
@@ -202,7 +206,7 @@ export default function OrdersPage() {
               isLoading={isLoading && hasLoadedOnce.current}
             />
           </div>
-          {orders.length === 0 && !isLoading && <EmptyNoData onReset={clearAllFilters} />}
+          {visibleOrders.length === 0 && !isLoading && <EmptyNoData onReset={clearAllFilters} />}
         </section>
       </div>
 
