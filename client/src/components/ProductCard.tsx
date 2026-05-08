@@ -3,6 +3,8 @@ import type { Product } from "@/data/mock";
 import { Link } from "wouter";
 import { Loader2, MessageSquare, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useCompany } from "@/hooks/useCompany";
+import { useToast } from "@/hooks/use-toast";
 import { getResponsiveImageSrcSet } from "@/lib/media";
 import { DEFAULT_COMPANY } from "@/lib/site";
 import { formatCategoryDisplayName, getProductPath } from "@shared/catalog";
@@ -13,12 +15,24 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { buyNow } = useCart();
+  const { data: company } = useCompany();
+  const { toast } = useToast();
   const [isBuying, setIsBuying] = React.useState(false);
   const categoryLabel = formatCategoryDisplayName(product.category);
   const imageSrcSet = getResponsiveImageSrcSet(product.image, [320, 480, 640, 768]);
+  const acceptOrders = company?.settings?.acceptOrders !== false;
 
   const handleBuyNow = () => {
     if (isBuying) return;
+    if (!acceptOrders) {
+      toast({
+        title: "Tienda cerrada temporalmente",
+        description: "Por ahora no estamos recibiendo nuevos pedidos.",
+        duration: 4000,
+      });
+      return;
+    }
+
     setIsBuying(true);
     buyNow(product);
     window.location.href = "/checkout"; // Safe navigation bypassing Wouter re-renders causing hook conflicts

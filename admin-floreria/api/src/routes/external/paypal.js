@@ -18,6 +18,21 @@ const log = (step, message, data) => {
 
 router.post("/create-order", async (req, res) => {
   const startedAt = Date.now();
+
+  // Verificar si la tienda acepta pedidos
+  const company = await prisma.company.findFirst({
+    where: { isActive: true },
+    select: { settings: true },
+  });
+
+  const acceptOrders = company?.settings?.acceptOrders ?? true;
+  if (!acceptOrders) {
+    return res.status(503).json({
+      status: "error",
+      message: "Tienda cerrada temporalmente",
+    });
+  }
+
   log("CREATE_ORDER", "Creando orden PayPal desde storefront");
 
   try {

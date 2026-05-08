@@ -402,6 +402,14 @@ async function createPaypalCheckoutOrder(prisma, payload) {
   const credentials = getActivePaypalCredentials(paymentSettings);
   serviceLog("settings:done", { environment: credentials.environment });
 
+  const companySettings =
+    company.settings && typeof company.settings === "object" ? company.settings : {};
+  if (companySettings.acceptOrders === false) {
+    const error = new Error("Tienda cerrada temporalmente");
+    error.statusCode = 503;
+    throw error;
+  }
+
   if (!credentials.clientId || !credentials.clientSecret) {
     const error = new Error(
       `Completa Client ID y Client Secret de PayPal (${credentials.environment}) en el admin.`

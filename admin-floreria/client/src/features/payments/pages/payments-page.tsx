@@ -9,6 +9,7 @@ type ShippingSectorRate = {
 };
 
 type PaymentSettings = {
+  acceptOrders: boolean;
   paypalEnvironment: "sandbox" | "live";
   paypalSandboxClientId: string;
   paypalSandboxClientSecret: string;
@@ -40,6 +41,7 @@ CI: 0910784024
 Correo: ventas@difiori.com.ec`;
 
 const DEFAULT_SETTINGS: PaymentSettings = {
+  acceptOrders: true,
   paypalEnvironment: "sandbox",
   paypalSandboxClientId: "",
   paypalSandboxClientSecret: "",
@@ -102,10 +104,12 @@ export default function PaymentsPage() {
     const load = async () => {
       try {
         const response = await ecommerceService.get("/admin/company/payment-settings");
-        const paymentSettings = response.data?.data?.settings?.paymentSettings || {};
+        const settings = response.data?.data?.settings || {};
+        const paymentSettings = settings.paymentSettings || {};
         setForm({
           ...DEFAULT_SETTINGS,
           ...paymentSettings,
+          acceptOrders: settings.acceptOrders ?? true,
           shippingSectorRates: ensureEditableSectorRates(
             normalizeSectorRates(paymentSettings.shippingSectorRates)
           ),
@@ -121,7 +125,10 @@ export default function PaymentsPage() {
     load();
   }, []);
 
-  const updateField = (field: keyof PaymentSettings, value: string) => {
+  const updateField = <K extends keyof PaymentSettings>(
+    field: K,
+    value: PaymentSettings[K]
+  ) => {
     setForm((current) => ({
       ...current,
       [field]: value,
@@ -160,8 +167,8 @@ export default function PaymentsPage() {
     }));
   };
 
-  const buildPaymentSettingsPayload = () => {
-    const normalizedSectorRates = form.shippingSectorRates.map((item) => ({
+  const buildPaymentSettingsPayload = (settings = form) => {
+    const normalizedSectorRates = settings.shippingSectorRates.map((item) => ({
       sector: item.sector.trim(),
       cost: item.cost.trim(),
     }));
@@ -169,7 +176,7 @@ export default function PaymentsPage() {
     return {
       normalizedSectorRates,
       payload: {
-        ...form,
+        ...settings,
         shippingSectorRates: normalizedSectorRates.filter(
           (item) => item.sector && item.cost
         ),
@@ -192,9 +199,11 @@ export default function PaymentsPage() {
       setIsSaving(true);
       const response = await ecommerceService.put("/admin/company/payment-settings", payload);
       const savedPaymentSettings = response.data?.data?.settings?.paymentSettings || {};
+      const savedSettings = response.data?.data?.settings || {};
       setForm({
         ...DEFAULT_SETTINGS,
         ...savedPaymentSettings,
+        acceptOrders: savedSettings.acceptOrders ?? true,
         shippingSectorRates: ensureEditableSectorRates(
           normalizeSectorRates(savedPaymentSettings.shippingSectorRates)
         ),
@@ -205,6 +214,43 @@ export default function PaymentsPage() {
       console.error("Save payment settings error:", error);
       toast.error("No se pudo guardar la configuracion");
       return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleAcceptOrders = async () => {
+    const nextForm = {
+      ...form,
+      acceptOrders: !form.acceptOrders,
+    };
+    const { normalizedSectorRates, payload } = buildPaymentSettingsPayload(nextForm);
+    const hasIncompleteSectorRate = normalizedSectorRates.some(
+      (item) => (item.sector && !item.cost) || (!item.sector && item.cost)
+    );
+
+    if (hasIncompleteSectorRate) {
+      toast.error("Completa o elimina los sectores incompletos antes de cambiar el estado.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await ecommerceService.put("/admin/company/payment-settings", payload);
+      const savedSettings = response.data?.data?.settings || {};
+      const savedPaymentSettings = savedSettings.paymentSettings || {};
+      setForm({
+        ...DEFAULT_SETTINGS,
+        ...savedPaymentSettings,
+        acceptOrders: savedSettings.acceptOrders ?? true,
+        shippingSectorRates: ensureEditableSectorRates(
+          normalizeSectorRates(savedPaymentSettings.shippingSectorRates)
+        ),
+      });
+      toast.success(nextForm.acceptOrders ? "Pedidos abiertos" : "Pedidos cerrados temporalmente");
+    } catch (error) {
+      console.error("Toggle orders status error:", error);
+      toast.error("No se pudo cambiar el estado de pedidos");
     } finally {
       setIsSaving(false);
     }
@@ -242,6 +288,39 @@ export default function PaymentsPage() {
           Deja listo el admin para desarrollo y produccion: PayPal, transferencias, envios por sector y correo del dueno.
         </p>
       </header>
+
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Estado de pedidos</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Al cerrar pedidos, la web muestra "Tienda cerrada temporalmente" y bloquea nuevas compras.
+            </p>
+            <p className="mt-2 text-sm font-semibold">
+              Estado actual:{" "}
+              <span className={form.acceptOrders ? "text-emerald-600" : "text-red-600"}>
+                {form.acceptOrders ? "Abierto" : "Cerrado temporalmente"}
+              </span>
+            </p>
+          </div>
+          <Button
+            type="button"
+            onClick={handleToggleAcceptOrders}
+            disabled={isSaving || isTestingPaypal}
+            className={
+              form.acceptOrders
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+            }
+          >
+            {isSaving
+              ? "Guardando..."
+              : form.acceptOrders
+                ? "Cerrar pedidos"
+                : "Abrir pedidos"}
+          </Button>
+        </div>
+      </section>
 
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900">Envio por sector</h2>
@@ -314,7 +393,12 @@ export default function PaymentsPage() {
             <span className="font-medium text-gray-700">Entorno activo de PayPal</span>
             <select
               value={form.paypalEnvironment}
-              onChange={(e) => updateField("paypalEnvironment", e.target.value)}
+              onChange={(e) =>
+                updateField(
+                  "paypalEnvironment",
+                  e.target.value === "live" ? "live" : "sandbox"
+                )
+              }
               className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm outline-none focus:border-blue-500"
             >
               <option value="sandbox">Sandbox</option>

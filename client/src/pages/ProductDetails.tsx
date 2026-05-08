@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getResponsiveImageSrcSet } from "@/lib/media";
 import { useProducts } from "@/hooks/useProducts";
+import { useCompany } from "@/hooks/useCompany";
 import { useCart } from "@/context/CartContext";
+import { useToast } from "@/hooks/use-toast";
 import { Seo } from "@/components/Seo";
 import { DEFAULT_COMPANY, absoluteUrl } from "@/lib/site";
 import {
@@ -32,7 +34,9 @@ export default function ProductDetails() {
   const [legacyMatch, legacyParams] = useRoute("/product/:id");
   const [, setLocation] = useLocation();
   const { data: allProducts = [], isLoading } = useProducts();
+  const { data: company } = useCompany();
   const { buyNow } = useCart();
+  const { toast } = useToast();
 
   const routeValue = canonicalMatch ? canonicalParams?.slug || "" : legacyParams?.id || "";
   const routePath = canonicalMatch ? `/producto/${routeValue}` : `/product/${routeValue}`;
@@ -60,6 +64,15 @@ export default function ProductDetails() {
 
   const handleBuyNow = () => {
     if (!product || isBuying) return;
+    if (company?.settings?.acceptOrders === false) {
+      toast({
+        title: "Tienda cerrada temporalmente",
+        description: "Por ahora no estamos recibiendo nuevos pedidos.",
+        duration: 4000,
+      });
+      return;
+    }
+
     setIsBuying(true);
     buyNow(product);
     setLocation("/checkout");

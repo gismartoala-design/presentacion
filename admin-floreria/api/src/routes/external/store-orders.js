@@ -8,6 +8,15 @@ const { uploadBuffer } = require("../../services/storageService");
 
 const router = express.Router();
 
+const log = (step, msg, data) => {
+  const ts = new Date().toISOString();
+  if (data !== undefined) {
+    console.log(`[STORE_ORDER][${step}] ${ts} - ${msg}`, JSON.stringify(data, null, 2));
+  } else {
+    console.log(`[STORE_ORDER][${step}] ${ts} - ${msg}`);
+  }
+};
+
 function parseMoney(value) {
   const normalized = String(value ?? "")
     .trim()
@@ -74,7 +83,23 @@ function parseDataUrl(dataUrl) {
  * Crear una orden desde la tienda publica.
  */
 router.post("/", async (req, res) => {
+  const startedAt = Date.now();
+
   try {
+    // Verificar si la tienda acepta pedidos
+    const company = await prisma.company.findFirst({
+      where: { isActive: true },
+      select: { settings: true },
+    });
+
+    const acceptOrders = company?.settings?.acceptOrders ?? true;
+    if (!acceptOrders) {
+      return res.status(503).json({
+        status: "error",
+        message: "Tienda cerrada temporalmente",
+      });
+    }
+
     const {
       productId,
       productName,
@@ -96,6 +121,22 @@ router.post("/", async (req, res) => {
       total,
       couponCode,
     } = req.body;
+
+    log("CREATE_ORDER", "Creando orden desde storefront", {
+      paymentMethod: paymentMethod || "UNKNOWN",
+      senderName,
+      senderEmail,
+      senderPhone,
+      receiverName,
+      receiverPhone,
+      productId: productId || null,
+      productName: productName || null,
+      quantity: Number(quantity || 1),
+      productPrice: parseMoney(productPrice),
+      total: parseMoney(total),
+      shippingCost: parseMoney(shippingCost),
+      couponCode: couponCode || null,
+    });
 
     if (!receiverName || !senderName || !phone || !total) {
       return res.status(400).json({
@@ -349,6 +390,26 @@ router.post("/", async (req, res) => {
       }
     }
 
+    log("CREATE_ORDER", "Orden creada en storefront", {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      paymentMethod: paymentMethod || "UNKNOWN",
+      paymentStatus: "PENDING",
+      source: "TIENDA_WEB",
+      senderName,
+      senderEmail,
+      receiverName,
+      receiverPhone,
+      productId: productId || null,
+      productName: productName || null,
+      quantity: Number(quantity || 1),
+      productPrice: parseMoney(productPrice),
+      durationMs: Date.now() - startedAt,
+      total: parseMoney(total),
+      shippingCost: parseMoney(shippingCost),
+      couponCode: appliedCouponCode || null,
+    });
+
     return res.status(201).json({
       status: "success",
       message: "Orden creada exitosamente",
@@ -358,6 +419,14 @@ router.post("/", async (req, res) => {
       },
     });
   } catch (error) {
+    log("CREATE_ORDER", "ERROR", {
+      message: error.message,
+      statusCode: error.statusCode,
+      durationMs: Date.now() - startedAt,
+      stack: error.stack,
+      paymentMethod: req.body?.paymentMethod || null,
+    });
+
     console.error("Store order error:", error);
     return res.status(500).json({
       status: "error",

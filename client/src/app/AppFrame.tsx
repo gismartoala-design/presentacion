@@ -1,6 +1,7 @@
-import { Suspense, lazy, useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, type CSSProperties, type ComponentType, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/Navbar";
+import { useCompany } from "@/hooks/useCompany";
 
 const Toaster = lazy(() =>
   import("@/components/ui/toaster").then((module) => ({ default: module.Toaster })),
@@ -77,10 +78,15 @@ interface AppFrameProps {
 
 export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps) {
   const [location] = useLocation();
+  const { data: company } = useCompany();
   const hasTrackedInitialPageView = useRef(false);
   const hasInitializedPixel = useRef(false);
   const [shouldLoadToaster, setShouldLoadToaster] = useState(false);
   const hideNavbar = location === "/checkout" || location === "/payment-gateway" || location === "/payment-result";
+  const showClosedStoreBanner = !hideNavbar && company?.settings?.acceptOrders === false;
+  const appFrameStyle = {
+    "--closed-store-banner-height": showClosedStoreBanner ? "38px" : "0px",
+  } as CSSProperties;
 
   useEffect(() => {
     if (hasInitializedPixel.current || typeof window === "undefined") return;
@@ -183,8 +189,16 @@ export function AppFrame({ Routes, fallback = <RouteFallback /> }: AppFrameProps
   }, [location]);
 
   return (
-    <div className="relative min-h-screen text-foreground selection:bg-[#5A3F73] selection:text-white">
+    <div
+      className="relative min-h-screen text-foreground selection:bg-[#5A3F73] selection:text-white"
+      style={appFrameStyle}
+    >
       <div className="relative z-10">
+        {showClosedStoreBanner ? (
+          <div className="fixed left-0 top-0 z-[70] flex h-[38px] w-full items-center justify-center bg-red-700 px-4 text-center text-sm font-black uppercase tracking-[0.18em] text-white shadow-md ring-1 ring-red-900/20">
+            Tienda cerrada temporalmente
+          </div>
+        ) : null}
         {!hideNavbar && <Navbar />}
         <Suspense fallback={fallback}>
           <Routes />

@@ -1,6 +1,6 @@
 .site-nav {
   position: fixed;
-  top: 0;
+  top: var(--closed-store-banner-height, 0px);
   z-index: 50;
   width: 100%;
   border-bottom: 1px solid rgb(235 220 247 / 0.1);

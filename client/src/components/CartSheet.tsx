@@ -1,11 +1,28 @@
 import React from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { useCart } from "@/context/CartContext";
+import { useCompany } from "@/hooks/useCompany";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, Minus, X, ShoppingBag } from "lucide-react";
-import { Link } from "wouter";
 
 export function CartSheet() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeItem, cartTotal } = useCart();
+  const { data: company } = useCompany();
+  const { toast } = useToast();
+
+  const handleCheckout = () => {
+    if (company?.settings?.acceptOrders === false) {
+      toast({
+        title: "Tienda cerrada temporalmente",
+        description: "Por ahora no estamos recibiendo nuevos pedidos.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    setIsCartOpen(false);
+    window.location.href = "/checkout";
+  };
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
@@ -78,10 +95,7 @@ export function CartSheet() {
             </div>
             <div className="flex flex-col gap-3 w-full">
               <button 
-                onClick={() => {
-                  setIsCartOpen(false);
-                  window.location.href = "/checkout";
-                }}
+                onClick={handleCheckout}
                 className="w-full bg-accent hover:bg-accent/90 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg"
               >
                 Finalizar Compra

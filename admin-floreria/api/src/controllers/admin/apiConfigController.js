@@ -502,10 +502,15 @@ const updatePaymentSettings = async (req, res) => {
       ? company.settings
       : {};
 
-    const paymentSettings = sanitizePaymentSettings(req.body);
+    const { acceptOrders, ...paymentSettingsPayload } = req.body;
+    const paymentSettings = sanitizePaymentSettings(paymentSettingsPayload);
     const mergedSettings = {
       ...currentSettings,
       paymentSettings,
+      acceptOrders:
+        typeof acceptOrders === "boolean"
+          ? acceptOrders
+          : currentSettings.acceptOrders ?? true,
     };
 
     const updatedCompany = await prisma.company.update({

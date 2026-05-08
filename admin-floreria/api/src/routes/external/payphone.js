@@ -16,6 +16,20 @@ const log = (step, msg, data) => {
 };
 
 router.post('/box-session', async (req, res) => {
+  // Verificar si la tienda acepta pedidos
+  const company = await prisma.company.findFirst({
+    where: { isActive: true },
+    select: { settings: true },
+  });
+
+  const acceptOrders = company?.settings?.acceptOrders ?? true;
+  if (!acceptOrders) {
+    return res.status(503).json({
+      status: "error",
+      message: "Tienda cerrada temporalmente",
+    });
+  }
+
   log('BOX_SESSION', 'Iniciando creación de sesión web');
 
   try {

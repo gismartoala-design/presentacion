@@ -255,6 +255,7 @@ export default function Checkout() {
   const transferInstructions =
     company?.settings?.paymentSettings?.transferInstructions ||
     DEFAULT_TRANSFER_INSTRUCTIONS;
+  const acceptOrders = company?.settings?.acceptOrders !== false;
   const shippingSectorRates = useMemo(
     () => normalizeSectorRates(company?.settings?.paymentSettings?.shippingSectorRates),
     [company?.settings?.paymentSettings?.shippingSectorRates]
@@ -578,6 +579,11 @@ export default function Checkout() {
 
   const handleConfirmOrder = async () => {
     if (isCheckoutBusy) return;
+    if (!acceptOrders) {
+      setOrderStatus("error");
+      setErrorMsg("Tienda cerrada temporalmente");
+      return;
+    }
 
     const {
       senderName,
