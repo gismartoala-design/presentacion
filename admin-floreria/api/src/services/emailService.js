@@ -107,7 +107,7 @@ function renderItemsTable(items) {
   if (items.length === 0) {
     return `
       <tr>
-        <td style="padding:14px 0;color:#5e4b70;">Sin productos detallados</td>
+        <td style="padding:18px 0;color:#5e4b70;font-size:16px;">Sin productos detallados</td>
       </tr>
     `;
   }
@@ -115,27 +115,27 @@ function renderItemsTable(items) {
   return items
     .map((item) => `
       <tr>
-        <td style="padding:14px 0;border-bottom:1px solid #f0e7f6;vertical-align:top;">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <td style="padding:18px 0;border-bottom:1px solid #f0e7f6;vertical-align:top;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #f0e7f6;border-radius:20px;background:#fffafc;">
             <tr>
               ${
                 item.imageUrl
-                  ? `<td width="96" style="padding-right:14px;vertical-align:top;">
-                      <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="80" height="80" style="display:block;width:80px;height:80px;object-fit:cover;border-radius:14px;border:1px solid #eadcf4;" />
+                  ? `<td width="132" style="padding:16px 0 16px 16px;vertical-align:top;">
+                      <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="112" height="112" style="display:block;width:112px;height:112px;object-fit:cover;border-radius:18px;border:1px solid #eadcf4;background:#ffffff;" />
                     </td>`
                   : ""
               }
-              <td style="vertical-align:top;">
-                <div style="font-size:15px;font-weight:700;color:#3d2852;">${escapeHtml(item.name)}</div>
+              <td style="padding:16px 8px 16px 0;vertical-align:top;">
+                <div style="font-size:24px;line-height:1.3;font-weight:800;color:#3d2852;">${escapeHtml(item.name)}</div>
                 ${
                   item.variantName
-                    ? `<div style="margin-top:4px;font-size:12px;color:#7c6a8d;">${escapeHtml(item.variantName)}</div>`
+                    ? `<div style="margin-top:6px;font-size:14px;color:#7c6a8d;">${escapeHtml(item.variantName)}</div>`
                     : ""
                 }
-                <div style="margin-top:6px;font-size:13px;color:#5e4b70;">Cantidad: ${item.quantity}</div>
-                <div style="margin-top:2px;font-size:13px;color:#5e4b70;">Precio: $${formatMoney(item.price)}</div>
+                <div style="margin-top:12px;font-size:16px;color:#5e4b70;">Cantidad: ${item.quantity}</div>
+                <div style="margin-top:4px;font-size:16px;color:#5e4b70;">Precio unitario: $${formatMoney(item.price)}</div>
               </td>
-              <td style="vertical-align:top;text-align:right;font-size:14px;font-weight:700;color:#3d2852;">
+              <td style="padding:16px 16px 16px 8px;vertical-align:top;text-align:right;font-size:24px;font-weight:800;color:#3d2852;white-space:nowrap;">
                 $${formatMoney(item.lineTotal)}
               </td>
             </tr>
@@ -441,6 +441,136 @@ class EmailService {
                 : ""
             }
             <p style="margin-top:24px;font-size:12px;color:#777;">Aviso automático de pedidos DIFIORI.</p>
+          </div>
+        `,
+        text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${formatMoney(subtotal)}\nEnvio / reserva: $${formatMoney(shipping)}\nTotal: $${formatMoney(total)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
+        attachments: [
+          {
+            filename: "difiori.png",
+            path: EMAIL_LOGO_PATH,
+            cid: "logo",
+          },
+          ...itemAttachments,
+        ],
+      };
+
+      const result = await this.transporter.sendMail(mailOptions);
+      console.log("New order alert sent successfully:", result.messageId);
+
+      return {
+        success: true,
+        messageId: result.messageId,
+      };
+    } catch (error) {
+      console.error("Error sending new order alert:", error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async sendNewOrderAlert(orderData) {
+    try {
+      const recipientEmail =
+        orderData.recipientEmail ||
+        process.env.OWNER_NOTIFICATION_EMAIL ||
+        process.env.COMPANY_EMAIL ||
+        "ventas@difiori.com.ec";
+      const storeUrl = String(
+        orderData.storeUrl ||
+        process.env.STORE_URL ||
+        process.env.CLIENT_URL ||
+        ""
+      ).trim();
+      const { items, attachments: itemAttachments } = normalizeEmailItems(orderData.items, storeUrl);
+      const total = Number(orderData.total || 0);
+      const subtotal = Number(orderData.subtotal || 0);
+      const shipping = Number(orderData.shipping || 0);
+      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+
+      const details = [
+        ["Pedido", orderData.orderNumber],
+        ["Fecha", orderData.createdAt],
+        ["Estado de pago", orderData.paymentStatus || "PENDING"],
+        ["Metodo de pago", orderData.paymentMethod || orderData.paymentLabel],
+        ["Quien envia", orderData.customerName],
+        ["Correo", orderData.customerEmail],
+        ["Telefono", orderData.customerPhone],
+        ["Quien recibe", orderData.billingContactName || orderData.receiverName],
+        ["Telefono receptor", orderData.receiverPhone],
+        ["Direccion", orderData.billingPrincipalAddress || orderData.exactAddress],
+        ["Sector", orderData.billingCity || orderData.sector],
+        ["Fecha de entrega", orderData.deliveryDateTime],
+        ["Mensaje de tarjeta", orderData.cardMessage || orderData.deliveryNotes],
+        ["Observaciones", orderData.observations || orderData.customerReference],
+        ["Cupon", orderData.couponCode || orderData.couponDiscountCode],
+      ].filter(([, value]) => value && String(value).trim() !== "");
+
+      const detailsHtml = details
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td style="padding:10px 0;color:#7c6a8d;font-size:15px;font-weight:800;width:200px;">${escapeHtml(label)}</td>
+              <td style="padding:10px 0;color:#2f2438;font-size:17px;line-height:1.45;">${escapeHtml(value)}</td>
+            </tr>
+          `
+        )
+        .join("");
+      const detailsText = details.map(([label, value]) => `${label}: ${value}`).join("\n");
+      const itemsHtml = renderItemsTable(items);
+      const itemsText = items.length
+        ? items
+            .map((item) =>
+              `- ${item.name}${item.variantName ? ` (${item.variantName})` : ""} | Cant: ${item.quantity} | Precio: $${formatMoney(item.price)} | Total: $${formatMoney(item.lineTotal)}`
+            )
+            .join("\n")
+        : "- Sin productos detallados";
+
+      const whatsappPhone = String(orderData.customerPhone || orderData.phone || "")
+        .replace(/[^0-9]/g, "");
+      const whatsappLink = whatsappPhone
+        ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
+            `Hola, te escribimos de DIFIORI por tu pedido ${orderData.orderNumber}.`
+          )}`
+        : "";
+
+      const mailOptions = {
+        from: getDefaultFrom(),
+        to: recipientEmail,
+        subject: `Nuevo pedido DIFIORI - ${orderData.orderNumber}`,
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:0 auto;color:#222;border:1px solid #eee;padding:28px;border-radius:22px;background:#fff;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;">
+              <div>
+                <div style="font-size:14px;font-weight:800;color:#7c6a8d;text-transform:uppercase;letter-spacing:.12em;">Nuevo pedido DIFIORI</div>
+                <h2 style="margin:10px 0 8px;color:#77472b;font-size:34px;line-height:1.15;">Pedido ${escapeHtml(orderData.orderNumber || "")}</h2>
+                <p style="margin:0;font-size:18px;line-height:1.5;color:#5e4b70;">Se registro un nuevo pedido en la tienda. Primero veras el producto y luego todo el detalle del cliente.</p>
+              </div>
+              <img src="cid:logo" alt="DIFIORI" width="84" height="84" style="display:block;width:84px;height:84px;border-radius:22px;" />
+            </div>
+            <h3 style="margin:0 0 12px;color:#3d2852;font-size:28px;">Productos del pedido</h3>
+            <p style="margin:0 0 12px;font-size:17px;color:#5e4b70;">Cantidad total de productos: <strong>${totalItems}</strong></p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">${itemsHtml}</table>
+            <div style="margin-bottom:22px;padding:20px 22px;border-radius:18px;background:#fff8fb;border:1px solid #f1d7e5;">
+              <div style="font-size:14px;font-weight:800;color:#7c6a8d;text-transform:uppercase;letter-spacing:.1em;">Total del pedido</div>
+              <div style="margin-top:10px;font-size:38px;font-weight:900;color:#3d2852;">$${formatMoney(total)}</div>
+              <div style="margin-top:10px;font-size:17px;line-height:1.6;color:#5e4b70;">
+                Subtotal: $${formatMoney(subtotal)}<br />
+                Envio / reserva: $${formatMoney(shipping)}<br />
+                Productos: ${totalItems}
+              </div>
+            </div>
+            <h3 style="margin:0 0 12px;color:#3d2852;font-size:28px;">Detalle completo</h3>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:24px;">
+              ${detailsHtml}
+            </table>
+            ${
+              whatsappLink
+                ? `<p style="margin-top:26px;"><a href="${whatsappLink}" style="display:inline-block;background:#25D366;color:#fff;padding:16px 24px;border-radius:999px;text-decoration:none;font-weight:800;font-size:18px;">Contactar por WhatsApp</a></p>`
+                : ""
+            }
+            <p style="margin-top:28px;font-size:13px;color:#777;">Aviso automatico de pedidos DIFIORI.</p>
           </div>
         `,
         text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${formatMoney(subtotal)}\nEnvio / reserva: $${formatMoney(shipping)}\nTotal: $${formatMoney(total)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
