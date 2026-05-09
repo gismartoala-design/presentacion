@@ -5,6 +5,7 @@ const fs = require("fs").promises;
 const { existsSync } = require("fs");
 const path = require("path");
 const { getDefaultFrom, getSmtpConfig } = require("../utils/smtpConfig");
+const { resolvePublicMediaUrl } = require("../utils/publicMediaUrl");
 const EMAIL_LOGO_PATH = path.resolve(
   __dirname,
   "../../../client/public/difiori.png"
@@ -70,7 +71,7 @@ function buildEmailImageSource(imagePath, attachments, cidPrefix, fallbackBaseUr
     return `cid:${cid}`;
   }
 
-  return resolveImageUrl(imagePath, fallbackBaseUrl);
+  return resolvePublicMediaUrl(imagePath) || resolveImageUrl(imagePath, fallbackBaseUrl);
 }
 
 function normalizeEmailItems(items, storeUrl) {

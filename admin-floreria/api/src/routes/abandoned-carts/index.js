@@ -1,5 +1,6 @@
 const express = require("express");
 const { db: prisma } = require("../../lib/prisma");
+const { resolvePublicMediaUrl } = require("../../utils/publicMediaUrl");
 
 const router = express.Router();
 
@@ -58,9 +59,24 @@ router.get("/", async (req, res) => {
       ],
     });
 
+    const normalizedCarts = carts.map((cart) => ({
+      ...cart,
+      items: Array.isArray(cart.items)
+        ? cart.items.map((item) => ({
+            ...item,
+            image: resolvePublicMediaUrl(item.image || item.productImage) || item.image || item.productImage || null,
+            productImage:
+              resolvePublicMediaUrl(item.productImage || item.image) ||
+              item.productImage ||
+              item.image ||
+              null,
+          }))
+        : [],
+    }));
+
     return res.json({
       status: "success",
-      data: carts,
+      data: normalizedCarts,
     });
   } catch (error) {
     console.error("Get abandoned carts error:", error);

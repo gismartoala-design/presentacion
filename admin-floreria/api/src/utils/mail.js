@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const { existsSync } = require("fs");
 const path = require("path");
 const { getDefaultFrom, getSmtpConfig } = require("./smtpConfig");
+const { resolvePublicMediaUrl } = require("./publicMediaUrl");
 
 const transporter = nodemailer.createTransport(getSmtpConfig());
 
@@ -67,7 +68,7 @@ function buildEmailImageSource(imagePath, attachments, cidPrefix, storeUrl) {
     return `cid:${cid}`;
   }
 
-  return resolveImageUrl(imagePath, storeUrl);
+  return resolvePublicMediaUrl(imagePath) || resolveImageUrl(imagePath, storeUrl);
 }
 
 async function sendAbandonedCartEmail({
