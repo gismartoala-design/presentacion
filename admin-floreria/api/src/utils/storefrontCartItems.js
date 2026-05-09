@@ -1,5 +1,39 @@
 const { resolvePublicMediaUrl } = require("./publicMediaUrl");
 
+function normalizeProductName(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[|,.;:()\-_/]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildProductNameCandidates(value = "") {
+  const normalized = normalizeProductName(value);
+  if (!normalized) return [];
+
+  const candidates = new Set([normalized]);
+  const parts = normalized.split(" ").filter(Boolean);
+
+  if (parts.length >= 4) {
+    candidates.add(parts.slice(0, 6).join(" "));
+    candidates.add(parts.slice(0, 5).join(" "));
+    candidates.add(parts.slice(0, 4).join(" "));
+  }
+
+  const withoutCommonWords = parts.filter(
+    (part) => !["para", "con", "de", "del", "la", "el", "en", "y"].includes(part)
+  );
+  if (withoutCommonWords.length >= 3) {
+    candidates.add(withoutCommonWords.slice(0, 5).join(" "));
+    candidates.add(withoutCommonWords.slice(0, 4).join(" "));
+  }
+
+  return Array.from(candidates).filter(Boolean);
+}
+
 function parseStorefrontMoney(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
 
@@ -85,13 +119,29 @@ async function hydrateStorefrontItems(prisma, items) {
         };
       }
 
-      const product = await prisma.product.findFirst({
-        where: {
-          name: { contains: String(item.productName), mode: "insensitive" },
-          isActive: true,
-        },
-        select: { id: true, image: true, name: true },
-      });
+      const candidates = buildProductNameCandidates(item.productName);
+      let product = null;
+
+      for (const candidate of candidates) {
+        const products = await prisma.product.findMany({
+          where: {
+            isActive: true,
+            name: { contains: candidate, mode: "insensitive" },
+          },
+          select: { id: true, image: true, name: true },
+          take: 10,
+        });
+
+        const candidateNormalized = normalizeProductName(candidate);
+        product =
+          products.find((entry) => normalizeProductName(entry.name) === normalizeProductName(item.productName)) ||
+          products.find((entry) => normalizeProductName(entry.name).includes(candidateNormalized)) ||
+          products.find((entry) => candidateNormalized.includes(normalizeProductName(entry.name))) ||
+          products[0] ||
+          null;
+
+        if (product) break;
+      }
 
       return {
         ...item,
