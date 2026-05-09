@@ -9,6 +9,92 @@ const EMAIL_LOGO_PATH = path.resolve(
   "../../../client/public/difiori.png"
 );
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+function resolveImageUrl(imagePath, baseUrl) {
+  const rawValue = String(imagePath || "").trim();
+  if (!rawValue) return "";
+  if (/^https?:\/\//i.test(rawValue)) return rawValue;
+  if (!baseUrl) return "";
+
+  try {
+    return new URL(rawValue.startsWith("/") ? rawValue : `/${rawValue}`, baseUrl).toString();
+  } catch {
+    return "";
+  }
+}
+
+function normalizeEmailItems(items, storeUrl) {
+  return (Array.isArray(items) ? items : []).map((item) => {
+    const name = item.productName || item.name || "Producto DIFIORI";
+    const quantity = Number(item.quantity || 1);
+    const price = Number(item.price || 0);
+    const lineTotal = quantity * price;
+
+    return {
+      name,
+      quantity,
+      price,
+      lineTotal,
+      variantName: item.variantName || "",
+      imageUrl: resolveImageUrl(item.productImage || item.image, storeUrl),
+    };
+  });
+}
+
+function renderItemsTable(items) {
+  if (items.length === 0) {
+    return `
+      <tr>
+        <td style="padding:14px 0;color:#5e4b70;">Sin productos detallados</td>
+      </tr>
+    `;
+  }
+
+  return items
+    .map((item) => `
+      <tr>
+        <td style="padding:14px 0;border-bottom:1px solid #f0e7f6;vertical-align:top;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              ${
+                item.imageUrl
+                  ? `<td width="96" style="padding-right:14px;vertical-align:top;">
+                      <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="80" height="80" style="display:block;width:80px;height:80px;object-fit:cover;border-radius:14px;border:1px solid #eadcf4;" />
+                    </td>`
+                  : ""
+              }
+              <td style="vertical-align:top;">
+                <div style="font-size:15px;font-weight:700;color:#3d2852;">${escapeHtml(item.name)}</div>
+                ${
+                  item.variantName
+                    ? `<div style="margin-top:4px;font-size:12px;color:#7c6a8d;">${escapeHtml(item.variantName)}</div>`
+                    : ""
+                }
+                <div style="margin-top:6px;font-size:13px;color:#5e4b70;">Cantidad: ${item.quantity}</div>
+                <div style="margin-top:2px;font-size:13px;color:#5e4b70;">Precio: $${formatMoney(item.price)}</div>
+              </td>
+              <td style="vertical-align:top;text-align:right;font-size:14px;font-weight:700;color:#3d2852;">
+                $${formatMoney(item.lineTotal)}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `)
+    .join("");
+}
+
 class EmailService {
   constructor() {
     this.transporter = null;
@@ -215,21 +301,21 @@ class EmailService {
         process.env.OWNER_NOTIFICATION_EMAIL ||
         process.env.COMPANY_EMAIL ||
         "ventas@difiori.com.ec";
-
-      const escapeHtml = (value) =>
-        String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-
-      const items = Array.isArray(orderData.items) ? orderData.items : [];
+      const storeUrl = String(
+        orderData.storeUrl ||
+        process.env.STORE_URL ||
+        process.env.CLIENT_URL ||
+        ""
+      ).trim();
+      const items = normalizeEmailItems(orderData.items, storeUrl);
       const total = Number(orderData.total || 0);
       const subtotal = Number(orderData.subtotal || 0);
       const shipping = Number(orderData.shipping || 0);
+      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
       const details = [
         ["Pedido", orderData.orderNumber],
+        ["Fecha", orderData.createdAt],
         ["Estado de pago", orderData.paymentStatus || "PENDING"],
         ["Metodo de pago", orderData.paymentMethod || orderData.paymentLabel],
         ["Quien envia", orderData.customerName],
@@ -246,27 +332,22 @@ class EmailService {
       ].filter(([, value]) => value && String(value).trim() !== "");
 
       const detailsHtml = details
-        .map(([label, value]) => `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</p>`)
+        .map(
+          ([label, value]) => `
+            <tr>
+              <td style="padding:7px 0;color:#7c6a8d;font-size:13px;font-weight:700;width:180px;">${escapeHtml(label)}</td>
+              <td style="padding:7px 0;color:#2f2438;font-size:14px;">${escapeHtml(value)}</td>
+            </tr>
+          `
+        )
         .join("");
       const detailsText = details.map(([label, value]) => `${label}: ${value}`).join("\n");
-
-      const itemsHtml = items.length
-        ? items
-            .map((item) => {
-              const name = item.productName || item.name || "Producto DIFIORI";
-              const quantity = Number(item.quantity || 1);
-              const price = Number(item.price || 0);
-              return `<li><strong>${escapeHtml(name)}</strong> - ${quantity} x $${price.toFixed(2)}</li>`;
-            })
-            .join("")
-        : "<li>Sin productos detallados</li>";
-
+      const itemsHtml = renderItemsTable(items);
       const itemsText = items.length
         ? items
-            .map((item) => {
-              const name = item.productName || item.name || "Producto DIFIORI";
-              return `- ${name} | Cant: ${item.quantity || 1} | Precio: $${Number(item.price || 0).toFixed(2)}`;
-            })
+            .map((item) =>
+              `- ${item.name}${item.variantName ? ` (${item.variantName})` : ""} | Cant: ${item.quantity} | Precio: $${formatMoney(item.price)} | Total: $${formatMoney(item.lineTotal)}`
+            )
             .join("\n")
         : "- Sin productos detallados";
 
@@ -283,25 +364,42 @@ class EmailService {
         to: recipientEmail,
         subject: `Nuevo pedido DIFIORI - ${orderData.orderNumber}`,
         html: `
-          <div style="font-family:Arial,Helvetica,sans-serif;max-width:680px;margin:0 auto;color:#222;border:1px solid #eee;padding:20px;border-radius:10px;">
-            <h2 style="margin:0 0 10px;color:#77472b;">Nuevo pedido recibido</h2>
-            <p style="margin:0 0 18px;">Se registro un nuevo pedido en la tienda DIFIORI.</p>
-            ${detailsHtml}
-            <hr style="border:0;border-top:1px solid #eee;margin:18px 0;" />
-            <p><strong>Subtotal:</strong> $${subtotal.toFixed(2)}</p>
-            <p><strong>Envio / reserva:</strong> $${shipping.toFixed(2)}</p>
-            <p style="font-size:18px;"><strong>Total:</strong> $${total.toFixed(2)}</p>
-            <h3 style="margin-top:18px;">Productos</h3>
-            <ul>${itemsHtml}</ul>
+          <div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;margin:0 auto;color:#222;border:1px solid #eee;padding:24px;border-radius:18px;background:#fff;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;">
+              <div>
+                <h2 style="margin:0 0 8px;color:#77472b;">Nuevo pedido recibido</h2>
+                <p style="margin:0;color:#5e4b70;">Se registró un nuevo pedido en la tienda DIFIORI.</p>
+              </div>
+              <img src="cid:logo" alt="DIFIORI" width="72" height="72" style="display:block;width:72px;height:72px;border-radius:18px;" />
+            </div>
+            <div style="margin-bottom:18px;padding:18px;border-radius:16px;background:#fff8fb;border:1px solid #f1d7e5;">
+              <div style="font-size:13px;font-weight:700;color:#7c6a8d;text-transform:uppercase;letter-spacing:.08em;">Total del pedido</div>
+              <div style="margin-top:8px;font-size:30px;font-weight:800;color:#3d2852;">$${formatMoney(total)}</div>
+              <div style="margin-top:8px;font-size:14px;color:#5e4b70;">
+                Subtotal: $${formatMoney(subtotal)} | Envío / reserva: $${formatMoney(shipping)} | Productos: ${totalItems}
+              </div>
+            </div>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:20px;">
+              ${detailsHtml}
+            </table>
+            <h3 style="margin:18px 0 10px;color:#3d2852;">Productos</h3>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${itemsHtml}</table>
             ${
               whatsappLink
-                ? `<p style="margin-top:24px;"><a href="${whatsappLink}" style="display:inline-block;background:#25D366;color:#fff;padding:12px 16px;border-radius:6px;text-decoration:none;font-weight:bold;">Contactar por WhatsApp</a></p>`
+                ? `<p style="margin-top:24px;"><a href="${whatsappLink}" style="display:inline-block;background:#25D366;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:bold;">Contactar por WhatsApp</a></p>`
                 : ""
             }
-            <p style="margin-top:24px;font-size:12px;color:#777;">Aviso automatico de pedidos DIFIORI.</p>
+            <p style="margin-top:24px;font-size:12px;color:#777;">Aviso automático de pedidos DIFIORI.</p>
           </div>
         `,
-        text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${subtotal.toFixed(2)}\nEnvio / reserva: $${shipping.toFixed(2)}\nTotal: $${total.toFixed(2)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
+        text: `Nuevo pedido recibido\n\n${detailsText}\n\nSubtotal: $${formatMoney(subtotal)}\nEnvio / reserva: $${formatMoney(shipping)}\nTotal: $${formatMoney(total)}\n\nProductos:\n${itemsText}${whatsappLink ? `\n\nWhatsApp: ${whatsappLink}` : ""}`,
+        attachments: [
+          {
+            filename: "difiori.png",
+            path: EMAIL_LOGO_PATH,
+            cid: "logo",
+          },
+        ],
       };
 
       const result = await this.transporter.sendMail(mailOptions);

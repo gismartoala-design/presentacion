@@ -1,6 +1,7 @@
 const express = require("express");
 const { db: prisma } = require("../../lib/prisma");
 const { sendAbandonedCartEmail } = require("../../utils/mail");
+const { normalizeStorefrontItems } = require("../../utils/storefrontCartItems");
 const router = express.Router();
 
 /**
@@ -28,6 +29,7 @@ router.post("/", async (req, res) => {
       couponCode,
       abandonedAt,
       source,
+      storeUrl,
     } = req.body;
 
     if (!customerName || !phone || !items || items.length === 0) {
@@ -50,10 +52,13 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ status: "error", message: "Empresa no configurada" });
     }
 
-    const formattedItems = items.map((item) => ({
-      name: item.product?.name || item.name || "Producto",
-      quantity: item.quantity,
-      price: item.product?.price || item.price || 0,
+    const formattedItems = normalizeStorefrontItems(items).map((item) => ({
+      name: item.productName || "Producto DIFIORI",
+      quantity: Number(item.quantity || 1),
+      price: item.price || 0,
+      image: item.productImage || null,
+      productImage: item.productImage || null,
+      variantName: item.variantName || null,
     }));
 
     const paymentSettings = company?.settings && typeof company.settings === "object"
@@ -125,6 +130,7 @@ router.post("/", async (req, res) => {
           couponCode,
           abandonedAt,
           source,
+          storeUrl,
         })
       : true;
 

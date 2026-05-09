@@ -4,6 +4,11 @@ const { Prisma } = require("@prisma/client");
 const { db: prisma } = require("../../lib/prisma");
 const emailService = require("../../services/emailService");
 const { buildStorefrontOrderDetails } = require("../../utils/storefrontOrderDetails");
+const {
+  parseStorefrontMoney,
+  normalizeStorefrontItems,
+  hydrateStorefrontItems,
+} = require("../../utils/storefrontCartItems");
 const { uploadBuffer } = require("../../services/storageService");
 
 const router = express.Router();
@@ -105,6 +110,7 @@ router.post("/", async (req, res) => {
       productName,
       productPrice,
       quantity = 1,
+      items: rawItems,
       receiverName,
       receiverPhone,
       senderName,
@@ -120,6 +126,7 @@ router.post("/", async (req, res) => {
       paymentMethod,
       total,
       couponCode,
+      storeUrl,
     } = req.body;
 
     log("CREATE_ORDER", "Creando orden desde storefront", {
@@ -195,25 +202,13 @@ router.post("/", async (req, res) => {
       paymentMethod,
     });
 
-    let resolvedProductId = null;
-    if (productId) {
-      const product = await prisma.product.findFirst({
-        where: { id: String(productId), isActive: true },
-        select: { id: true },
-      });
-      resolvedProductId = product?.id || null;
-    }
-
-    if (!resolvedProductId && productName) {
-      const product = await prisma.product.findFirst({
-        where: {
-          name: { contains: productName, mode: "insensitive" },
-          isActive: true,
-        },
-        select: { id: true },
-      });
-      resolvedProductId = product?.id || null;
-    }
+    const normalizedItems = normalizeStorefrontItems(rawItems, {
+      productId,
+      productName,
+      productPrice,
+      quantity,
+    });
+    const hydratedItems = await hydrateStorefrontItems(prisma, normalizedItems);
 
     const order = await prisma.$transaction(async (tx) => {
       const subtotalValue = parseMoney(total) - parseMoney(shippingCost) - couponDiscountAmount;
@@ -306,14 +301,19 @@ router.post("/", async (req, res) => {
         });
       }
 
-      if (resolvedProductId) {
-        await tx.orderItem.create({
-          data: {
-            orderId: newOrder.id,
-            productId: resolvedProductId,
-            quantity: Number(quantity || 1),
-            price: parseMoney(productPrice),
-          },
+      const orderItemsData = hydratedItems
+        .filter((item) => item.productId)
+        .map((item) => ({
+          orderId: newOrder.id,
+          productId: item.productId,
+          quantity: Number(item.quantity || 1),
+          price: parseStorefrontMoney(item.price),
+          variantName: item.variantName || null,
+        }));
+
+      if (orderItemsData.length > 0) {
+        await tx.orderItem.createMany({
+          data: orderItemsData,
         });
       }
 
@@ -351,15 +351,14 @@ router.post("/", async (req, res) => {
       companyName: process.env.COMPANY_NAME || "DIFIORI",
       companyEmail: process.env.COMPANY_EMAIL || process.env.EMAIL_USER,
       companyPhone: process.env.COMPANY_PHONE || "",
-      items: [
-        {
-          productName: productName || "Producto DIFIORI",
-          variantName: null,
-          quantity: Number(quantity || 1),
-          price: parseMoney(productPrice),
-          productImage: null,
-        },
-      ],
+      storeUrl,
+      items: hydratedItems.map((item) => ({
+        productName: item.productName || "Producto DIFIORI",
+        variantName: item.variantName || null,
+        quantity: Number(item.quantity || 1),
+        price: parseStorefrontMoney(item.price),
+        productImage: item.productImage || null,
+      })),
     };
 
     try {

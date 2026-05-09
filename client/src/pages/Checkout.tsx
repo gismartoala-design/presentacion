@@ -32,7 +32,7 @@ type OrderStatus = "idle" | "loading" | "success" | "error";
 type PaymentMethod = "PayPal" | "Payphone" | "Banco" | "Zelle";
 type CheckoutStep = "sender" | "receiver" | "payment";
 type ShippingSectorRate = { sector: string; cost: number };
-type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement;
+type CheckoutFocusable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 
 const CHECKOUT_REQUEST_TIMEOUT_MS = 30000;
 const PAYPAL_PROOF_UPLOAD_TIMEOUT_MS = 8000;
@@ -264,27 +264,29 @@ export default function Checkout() {
     () => resolveShippingCostBySector(sectorInput, shippingSectorRates),
     [sectorInput, shippingSectorRates]
   );
-  const sectorSuggestions = useMemo(() => {
-    const query = normalizeSectorName(sectorInput);
-    if (!query) return [];
-
-    return shippingSectorRates
-      .filter((item) => normalizeSectorName(item.sector).includes(query))
-      .slice(0, 6);
-  }, [sectorInput, shippingSectorRates]);
-
   const receiverNameRef = useRef<HTMLInputElement>(null);
   const receiverPhoneRef = useRef<HTMLInputElement>(null);
   const senderNameRef = useRef<HTMLInputElement>(null);
   const senderEmailRef = useRef<HTMLInputElement>(null);
   const senderPhoneRef = useRef<HTMLInputElement>(null);
-  const sectorRef = useRef<HTMLInputElement>(null);
+  const sectorRef = useRef<HTMLSelectElement>(null);
   const dateTimeRef = useRef<HTMLInputElement>(null);
   const addressRef = useRef<HTMLInputElement>(null);
   const cardMessageRef = useRef<HTMLTextAreaElement>(null);
   const observationsRef = useRef<HTMLTextAreaElement>(null);
 
   const abandonmentSent = useRef(false);
+  const orderItemsPayload = useMemo(
+    () =>
+      items.map((item) => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        productImage: item.product.image,
+        quantity: item.quantity,
+        price: item.product.price,
+      })),
+    [items]
+  );
 
   const readCheckoutFields = () => {
     const senderName = senderNameRef.current?.value.trim() || "";
@@ -356,7 +358,8 @@ export default function Checkout() {
             couponCode: appliedCoupon?.code || "",
             abandonedAt: new Date().toISOString(),
             source: "CHECKOUT_WEB",
-            items,
+            storeUrl: window.location.origin,
+            items: orderItemsPayload,
             total:
               cartTotal +
               shippingResolution.cost -
@@ -379,7 +382,7 @@ export default function Checkout() {
       clearTimeout(timer);
       window.removeEventListener("beforeunload", handleAbandonment);
     };
-  }, [items, orderStatus, paymentMethod, appliedCoupon, cartTotal, shippingResolution.cost, sectorInput]);
+  }, [orderItemsPayload, orderStatus, paymentMethod, appliedCoupon, cartTotal, shippingResolution.cost, sectorInput]);
 
   const cartSubtotal = cartTotal;
   const shippingCost = shippingResolution.cost;
@@ -538,6 +541,31 @@ export default function Checkout() {
     setErrorMsg("");
   };
 
+  const handleStepChange = (targetStep: CheckoutStep) => {
+    if (isCheckoutBusy || targetStep === activeStep) return;
+
+    if (targetStep === "sender") {
+      setActiveStep("sender");
+      setErrorMsg("");
+      return;
+    }
+
+    if (targetStep === "receiver") {
+      if (validateSenderStep()) {
+        setActiveStep("receiver");
+        setErrorMsg("");
+      }
+      return;
+    }
+
+    if (targetStep === "payment") {
+      if (validateSenderStep() && validateReceiverStep()) {
+        setActiveStep("payment");
+        setErrorMsg("");
+      }
+    }
+  };
+
   const handleOpenCart = () => {
     if (isCartOpening || isCheckoutBusy) return;
     setIsCartOpening(true);
@@ -611,6 +639,7 @@ export default function Checkout() {
       productName: firstItem?.product.name,
       productPrice: firstItem?.product.price,
       quantity: firstItem?.quantity || 1,
+      items: orderItemsPayload,
       receiverName,
       senderName,
       senderEmail,
@@ -625,6 +654,7 @@ export default function Checkout() {
       observations,
       total: finalTotal,
       couponCode: appliedCoupon?.code || null,
+      storeUrl: window.location.origin,
     };
 
     try {
@@ -904,10 +934,7 @@ export default function Checkout() {
               <button
                 key={step.id}
                 type="button"
-                onClick={() => {
-                  setActiveStep(step.id);
-                  setErrorMsg("");
-                }}
+                onClick={() => handleStepChange(step.id)}
                 className={cn(
                   "flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-[1rem] px-1.5 text-center transition-all sm:min-h-[78px] sm:flex-row sm:gap-3 sm:px-2 sm:text-left",
                   isActive
@@ -1230,42 +1257,27 @@ export default function Checkout() {
                     <span>
                       <MapPin className="h-5 w-5" /> Sector *
                     </span>
-                    <input
+                    <select
                       ref={sectorRef}
                       value={sectorInput}
                       onChange={(e) => setSectorInput(e.target.value)}
                       className="checkout-input"
-                      placeholder="Ej: Urdesa, Alborada, Ceibos"
-                      list="shipping-sector-options"
-                    />
-                    <datalist id="shipping-sector-options">
+                    >
+                      <option value="" disabled>
+                        Selecciona un sector
+                      </option>
                       {shippingSectorRates.map((item) => (
-                        <option key={item.sector} value={item.sector} />
+                        <option key={item.sector} value={item.sector}>
+                          {item.sector}
+                        </option>
                       ))}
-                    </datalist>
-                    {sectorSuggestions.length > 0 && !shippingResolution.isMatched ? (
-                      <div className="overflow-hidden rounded-2xl border border-[#E5D7EF] bg-white shadow-sm">
-                        {sectorSuggestions.map((item) => (
-                          <button
-                            key={item.sector}
-                            type="button"
-                            onClick={() => setSectorInput(item.sector)}
-                    className="flex w-full items-center justify-between border-b border-[#F0E6F7] px-4 py-3 text-left text-base font-black text-[#4A3362] transition-colors hover:bg-[#FBF7FD] last:border-b-0"
-                          >
-                            <span>{item.sector}</span>
-                            <span className="text-[0.78rem] font-black uppercase tracking-[0.12em] text-[#4A3362]">
-                              sugerido
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
+                    </select>
                     <span className="text-sm font-black text-[#4A3362]">
                       {shippingResolution.isMatched
                         ? `Costo de envío para ${shippingResolution.matchedSector}: $${shippingCost.toFixed(2)}`
-                        : sectorInput
-                          ? "No encontramos una tarifa exacta para ese sector. El envío quedará a coordinar."
-                          : "Ingresa tu sector para calcular el envío."}
+                        : shippingSectorRates.length === 0
+                          ? "No hay sectores configurados en este momento. Contáctanos para coordinar el envío."
+                          : "Selecciona tu sector para calcular el envío."}
                     </span>
                   </label>
                   <label className="checkout-field">

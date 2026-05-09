@@ -3,6 +3,33 @@ const { getDefaultFrom, getSmtpConfig } = require("./smtpConfig");
 
 const transporter = nodemailer.createTransport(getSmtpConfig());
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatMoney(value) {
+  return Number(value || 0).toFixed(2);
+}
+
+function resolveImageUrl(imagePath, storeUrl) {
+  const rawValue = String(imagePath || "").trim();
+  if (!rawValue) return "";
+  if (/^https?:\/\//i.test(rawValue)) return rawValue;
+
+  const baseUrl = String(storeUrl || process.env.STORE_URL || process.env.CLIENT_URL || "").trim();
+  if (!baseUrl) return "";
+
+  try {
+    return new URL(rawValue.startsWith("/") ? rawValue : `/${rawValue}`, baseUrl).toString();
+  } catch {
+    return "";
+  }
+}
+
 async function sendAbandonedCartEmail({
   customerName,
   phone,
@@ -24,17 +51,61 @@ async function sendAbandonedCartEmail({
   couponCode,
   abandonedAt,
   source,
+  storeUrl,
 }) {
   const adminEmail = recipientEmail || process.env.COMPANY_EMAIL || process.env.ADMIN_EMAIL || "ventas@difiori.com.ec";
   const safeTotal = Number(total) || 0;
 
-  const itemsHtml = items
-    .map((item) => `
-      <li>
-        <strong>${item.name}</strong> - ${item.quantity} x ${item.price}
-      </li>
-    `)
-    .join("");
+  const normalizedItems = (Array.isArray(items) ? items : []).map((item) => {
+    const imageUrl = resolveImageUrl(item.productImage || item.image, storeUrl);
+    const price = Number(item.price || 0);
+    const quantity = Number(item.quantity || 1);
+    const lineTotal = price * quantity;
+
+    return {
+      name: item.name || "Producto DIFIORI",
+      quantity,
+      price,
+      imageUrl,
+      variantName: item.variantName || "",
+      lineTotal,
+    };
+  });
+
+  const itemsHtml = normalizedItems.length
+    ? normalizedItems
+        .map((item) => `
+          <tr>
+            <td style="padding:12px 0;border-bottom:1px solid #f0e7f6;vertical-align:top;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  ${
+                    item.imageUrl
+                      ? `<td width="92" style="padding-right:14px;vertical-align:top;">
+                          <img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.name)}" width="78" height="78" style="display:block;width:78px;height:78px;object-fit:cover;border-radius:14px;border:1px solid #eadcf4;" />
+                        </td>`
+                      : ""
+                  }
+                  <td style="vertical-align:top;">
+                    <div style="font-size:15px;font-weight:700;color:#3d2852;">${escapeHtml(item.name)}</div>
+                    ${
+                      item.variantName
+                        ? `<div style="margin-top:4px;font-size:12px;color:#7c6a8d;">${escapeHtml(item.variantName)}</div>`
+                        : ""
+                    }
+                    <div style="margin-top:6px;font-size:13px;color:#5e4b70;">Cantidad: ${item.quantity}</div>
+                    <div style="margin-top:2px;font-size:13px;color:#5e4b70;">Precio: $${formatMoney(item.price)}</div>
+                  </td>
+                  <td style="vertical-align:top;text-align:right;font-size:14px;font-weight:700;color:#3d2852;">
+                    $${formatMoney(item.lineTotal)}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        `)
+        .join("")
+    : `<tr><td style="padding:12px 0;color:#5e4b70;">Sin productos detallados</td></tr>`;
 
   const waLink = `https://wa.me/${String(phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
     `Hola ${customerName}, vimos que te interesaste en nuestros productos en DIFIORI. Podemos ayudarte con tu pedido?`
@@ -64,7 +135,14 @@ async function sendAbandonedCartEmail({
   ].filter(([, value]) => value && String(value).trim() !== "");
 
   const detailsHtml = details
-    .map(([label, value]) => `<p><strong>${label}:</strong> ${value}</p>`)
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:7px 0;color:#7c6a8d;font-size:13px;font-weight:700;width:180px;">${escapeHtml(label)}</td>
+          <td style="padding:7px 0;color:#2f2438;font-size:14px;">${escapeHtml(value)}</td>
+        </tr>
+      `
+    )
     .join("");
 
   const detailsText = details.map(([label, value]) => `${label}: ${value}`).join("\n");
@@ -74,26 +152,33 @@ async function sendAbandonedCartEmail({
     to: adminEmail,
     subject: `Carrito Abandonado - ${customerName}`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-        <h2 style="color: #5A3F73;">Posible Cliente Perdido</h2>
-        <p>Alguien comenzo el proceso de compra pero no lo finalizo:</p>
-        <hr />
-        <p><strong>Responsable:</strong> ${ownerName || "Equipo comercial"}</p>
-        ${detailsHtml}
-        <p><strong>Total estimado:</strong> $${safeTotal.toFixed(2)}</p>
-        <h3>Productos en el carrito:</h3>
-        <ul>${itemsHtml}</ul>
-        <div style="margin-top: 30px; text-align: center;">
-          <a href="${waLink}" style="background-color: #25D366; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+      <div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;margin:0 auto;border:1px solid #eee;padding:24px;border-radius:18px;background:#fff;">
+        <h2 style="margin:0 0 10px;color:#5A3F73;">Carrito abandonado detectado</h2>
+        <p style="margin:0 0 18px;color:#5e4b70;">Alguien comenzó el proceso de compra pero no lo finalizó.</p>
+        <div style="margin-bottom:18px;padding:14px 16px;border-radius:14px;background:#faf5ff;border:1px solid #eadcf4;">
+          <strong style="color:#3d2852;">Responsable:</strong>
+          <span style="color:#5e4b70;"> ${escapeHtml(ownerName || "Equipo comercial")}</span>
+        </div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:18px;">
+          ${detailsHtml}
+        </table>
+        <div style="margin:18px 0;padding:16px;border-radius:16px;background:#fff8fb;border:1px solid #f3d7e7;">
+          <div style="font-size:13px;font-weight:700;color:#7c6a8d;text-transform:uppercase;letter-spacing:.08em;">Total estimado</div>
+          <div style="margin-top:6px;font-size:28px;font-weight:800;color:#3d2852;">$${formatMoney(safeTotal)}</div>
+        </div>
+        <h3 style="margin:22px 0 10px;color:#3d2852;">Productos del carrito</h3>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${itemsHtml}</table>
+        <div style="margin-top:30px;text-align:center;">
+          <a href="${waLink}" style="background-color:#25D366;color:white;padding:15px 25px;text-decoration:none;border-radius:999px;font-weight:bold;display:inline-block;">
             Contactar por WhatsApp ahora
           </a>
         </div>
-        <p style="margin-top: 30px; font-size: 12px; color: #777;">
-          Este es un aviso automatico del sistema de recuperacion de carritos de DIFIORI.
+        <p style="margin-top:30px;font-size:12px;color:#777;">
+          Este es un aviso automático del sistema de recuperación de carritos de DIFIORI.
         </p>
       </div>
     `,
-    text: `Carrito abandonado detectado\n\nResponsable: ${ownerName || "Equipo comercial"}\n${detailsText}\n\nTotal estimado: $${safeTotal.toFixed(2)}\n\nProductos:\n${items.map((item) => `- ${item.name} | Cant: ${item.quantity} | Precio: ${item.price}`).join("\n")}\n\nWhatsApp: ${waLink}`,
+    text: `Carrito abandonado detectado\n\nResponsable: ${ownerName || "Equipo comercial"}\n${detailsText}\n\nTotal estimado: $${formatMoney(safeTotal)}\n\nProductos:\n${normalizedItems.map((item) => `- ${item.name}${item.variantName ? ` (${item.variantName})` : ""} | Cant: ${item.quantity} | Precio: $${formatMoney(item.price)} | Total: $${formatMoney(item.lineTotal)}`).join("\n")}\n\nWhatsApp: ${waLink}`,
   };
 
   try {
