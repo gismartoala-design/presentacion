@@ -1,6 +1,11 @@
 const { nanoid } = require("nanoid");
 const emailService = require("./emailService");
 const { buildStorefrontOrderDetails } = require("../utils/storefrontOrderDetails");
+const {
+  parseStorefrontMoney,
+  normalizeStorefrontItems,
+  hydrateStorefrontItems,
+} = require("../utils/storefrontCartItems");
 
 function splitFullName(fullName = "") {
   const trimmed = String(fullName).trim();
@@ -9,15 +14,6 @@ function splitFullName(fullName = "") {
     firstName: parts[0] || trimmed,
     lastName: parts.slice(1).join(" "),
   };
-}
-
-function parseCurrencyLikeValue(value) {
-  if (typeof value === "number") return value;
-  const normalized = String(value || "")
-    .replace(/[^0-9.,-]/g, "")
-    .replace(/,/g, ".");
-  const parsed = Number(normalized);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 async function resolveCoupon(prisma, { couponCode, total, shippingCost }) {
@@ -57,37 +53,13 @@ async function resolveCoupon(prisma, { couponCode, total, shippingCost }) {
   };
 }
 
-async function resolveProductId(prisma, { productId, productName }) {
-  if (productId) {
-    const product = await prisma.product.findFirst({
-      where: {
-        id: String(productId),
-        isActive: true,
-      },
-      select: { id: true },
-    });
-
-    if (product) return product.id;
-  }
-
-  if (!productName) return null;
-
-  const product = await prisma.product.findFirst({
-    where: {
-      name: { contains: String(productName), mode: "insensitive" },
-      isActive: true,
-    },
-  });
-
-  return product?.id || null;
-}
-
 async function createPendingPayphoneOrder(prisma, payload) {
   const {
     productId,
     productName,
     productPrice,
     quantity = 1,
+    items: rawItems,
     receiverName,
     receiverPhone,
     senderName,
@@ -102,6 +74,7 @@ async function createPendingPayphoneOrder(prisma, payload) {
     observations,
     total,
     couponCode,
+    storeUrl,
     paymentLabel = "Tarjeta (PayPhone Box)",
   } = payload;
 
@@ -121,8 +94,14 @@ async function createPendingPayphoneOrder(prisma, payload) {
   const amountInCents = Math.round(finalTotal * 100);
   const orderNumber = `DIFIORI-${Date.now()}`;
   const clientTransactionId = nanoid(16);
-  const resolvedProductId = await resolveProductId(prisma, { productId, productName });
   const senderParts = splitFullName(senderName);
+  const normalizedItems = normalizeStorefrontItems(rawItems, {
+    productId,
+    productName,
+    productPrice,
+    quantity,
+  });
+  const hydratedItems = await hydrateStorefrontItems(prisma, normalizedItems);
   const storefrontDetails = buildStorefrontOrderDetails({
     senderName,
     senderEmail,
@@ -167,14 +146,19 @@ async function createPendingPayphoneOrder(prisma, payload) {
       },
     });
 
-    if (resolvedProductId) {
-      await tx.orderItem.create({
-        data: {
-          orderId: newOrder.id,
-          productId: resolvedProductId,
-          quantity: Number(quantity),
-          price: parseCurrencyLikeValue(productPrice),
-        },
+    const orderItemsData = hydratedItems
+      .filter((item) => item.productId)
+      .map((item) => ({
+        orderId: newOrder.id,
+        productId: item.productId,
+        quantity: Number(item.quantity),
+        price: parseStorefrontMoney(item.price),
+        variantName: item.variantName || null,
+      }));
+
+    if (orderItemsData.length > 0) {
+      await tx.orderItem.createMany({
+        data: orderItemsData,
       });
     }
 
@@ -201,13 +185,14 @@ async function createPendingPayphoneOrder(prisma, payload) {
       cardMessage,
       observations,
       couponCode: appliedCouponCode,
-      items: [
-        {
-          productName: productName || "Producto DIFIORI",
-          quantity: Number(quantity),
-          price: parseCurrencyLikeValue(productPrice),
-        },
-      ],
+      storeUrl,
+      items: hydratedItems.map((item) => ({
+        productName: item.productName || "Producto DIFIORI",
+        quantity: Number(item.quantity || 1),
+        price: parseStorefrontMoney(item.price),
+        productImage: item.productImage || null,
+        variantName: item.variantName || null,
+      })),
     });
   } catch (emailError) {
     console.error("PayPhone new order alert email error:", emailError);
