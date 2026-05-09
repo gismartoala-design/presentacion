@@ -2,6 +2,7 @@ const nodemailer = require("nodemailer");
 const handlebars = require("handlebars");
 const juice = require("juice");
 const fs = require("fs").promises;
+const { existsSync } = require("fs");
 const path = require("path");
 const { getDefaultFrom, getSmtpConfig } = require("../utils/smtpConfig");
 const EMAIL_LOGO_PATH = path.resolve(
@@ -34,8 +35,47 @@ function resolveImageUrl(imagePath, baseUrl) {
   }
 }
 
+function sanitizeCidFragment(value, fallback = "item") {
+  const normalized = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
+  return normalized || fallback;
+}
+
+function resolveLocalPublicImagePath(imagePath) {
+  const value = String(imagePath || "").trim();
+  if (!value || value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:image/")) {
+    return "";
+  }
+
+  const normalizedPath = decodeURIComponent(value.startsWith("/") ? value.slice(1) : value);
+  const candidatePath = path.resolve(__dirname, "../../../client/public", normalizedPath);
+  return existsSync(candidatePath) ? candidatePath : "";
+}
+
+function buildEmailImageSource(imagePath, attachments, cidPrefix, fallbackBaseUrl) {
+  const localPath = resolveLocalPublicImagePath(imagePath);
+  if (localPath) {
+    const cid = `${cidPrefix}-${sanitizeCidFragment(path.basename(localPath), "image")}@difiori`;
+    attachments.push({
+      filename: path.basename(localPath),
+      path: localPath,
+      cid,
+    });
+    return `cid:${cid}`;
+  }
+
+  return resolveImageUrl(imagePath, fallbackBaseUrl);
+}
+
 function normalizeEmailItems(items, storeUrl) {
-  return (Array.isArray(items) ? items : []).map((item) => {
+  const attachments = [];
+  const normalizedItems = (Array.isArray(items) ? items : []).map((item, index) => {
     const name = item.productName || item.name || "Producto DIFIORI";
     const quantity = Number(item.quantity || 1);
     const price = Number(item.price || 0);
@@ -47,9 +87,19 @@ function normalizeEmailItems(items, storeUrl) {
       price,
       lineTotal,
       variantName: item.variantName || "",
-      imageUrl: resolveImageUrl(item.productImage || item.image, storeUrl),
+      imageUrl: buildEmailImageSource(
+        item.productImage || item.image,
+        attachments,
+        `order-item-${index + 1}`,
+        storeUrl
+      ),
     };
   });
+
+  return {
+    items: normalizedItems,
+    attachments,
+  };
 }
 
 function renderItemsTable(items) {
@@ -307,7 +357,7 @@ class EmailService {
         process.env.CLIENT_URL ||
         ""
       ).trim();
-      const items = normalizeEmailItems(orderData.items, storeUrl);
+      const { items, attachments: itemAttachments } = normalizeEmailItems(orderData.items, storeUrl);
       const total = Number(orderData.total || 0);
       const subtotal = Number(orderData.subtotal || 0);
       const shipping = Number(orderData.shipping || 0);
@@ -399,6 +449,7 @@ class EmailService {
             path: EMAIL_LOGO_PATH,
             cid: "logo",
           },
+          ...itemAttachments,
         ],
       };
 
