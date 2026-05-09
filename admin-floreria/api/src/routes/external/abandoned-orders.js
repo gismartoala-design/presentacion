@@ -1,7 +1,10 @@
 const express = require("express");
 const { db: prisma } = require("../../lib/prisma");
 const { sendAbandonedCartEmail } = require("../../utils/mail");
-const { normalizeStorefrontItems } = require("../../utils/storefrontCartItems");
+const {
+  normalizeStorefrontItems,
+  hydrateStorefrontItems,
+} = require("../../utils/storefrontCartItems");
 const router = express.Router();
 
 /**
@@ -52,12 +55,16 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ status: "error", message: "Empresa no configurada" });
     }
 
-    const formattedItems = normalizeStorefrontItems(items).map((item) => ({
+    const normalizedItems = normalizeStorefrontItems(items);
+    const hydratedItems = await hydrateStorefrontItems(prisma, normalizedItems);
+
+    const formattedItems = hydratedItems.map((item) => ({
       name: item.productName || "Producto DIFIORI",
       quantity: Number(item.quantity || 1),
       price: item.price || 0,
       image: item.productImage || null,
       productImage: item.productImage || null,
+      productId: item.productId || null,
       variantName: item.variantName || null,
     }));
 
