@@ -1,6 +1,10 @@
 const express = require("express");
 const { db: prisma } = require("../../lib/prisma");
 const { resolvePublicMediaUrl } = require("../../utils/publicMediaUrl");
+const {
+  normalizeStorefrontItems,
+  hydrateStorefrontItems,
+} = require("../../utils/storefrontCartItems");
 
 const router = express.Router();
 
@@ -59,20 +63,26 @@ router.get("/", async (req, res) => {
       ],
     });
 
-    const normalizedCarts = carts.map((cart) => ({
-      ...cart,
-      items: Array.isArray(cart.items)
-        ? cart.items.map((item) => ({
+    const normalizedCarts = await Promise.all(
+      carts.map(async (cart) => {
+        const normalizedItems = normalizeStorefrontItems(Array.isArray(cart.items) ? cart.items : []);
+        const hydratedItems = await hydrateStorefrontItems(prisma, normalizedItems);
+
+        return {
+          ...cart,
+          items: hydratedItems.map((item) => ({
             ...item,
-            image: resolvePublicMediaUrl(item.image || item.productImage) || item.image || item.productImage || null,
+            name: item.productName || "Producto DIFIORI",
+            image: resolvePublicMediaUrl(item.productImage || item.image) || item.productImage || item.image || null,
             productImage:
               resolvePublicMediaUrl(item.productImage || item.image) ||
               item.productImage ||
               item.image ||
               null,
-          }))
-        : [],
-    }));
+          })),
+        };
+      })
+    );
 
     return res.json({
       status: "success",
