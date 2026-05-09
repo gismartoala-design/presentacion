@@ -14,8 +14,27 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
+  if (imagePath.startsWith("/image-proxy?")) {
+    try {
+      const parsed = new URL(imagePath, window.location.origin);
+      const target = parsed.searchParams.get("url");
+      return target || "/placeholder-image.svg";
+    } catch {
+      return "/placeholder-image.svg";
+    }
+  }
+
   // Si ya es una URL completa (Cloudinary o externa)
   if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    try {
+      const parsed = new URL(imagePath);
+      if (parsed.pathname === "/image-proxy") {
+        return parsed.searchParams.get("url") || imagePath;
+      }
+    } catch {
+      return imagePath;
+    }
+
     return imagePath;
   }
   
