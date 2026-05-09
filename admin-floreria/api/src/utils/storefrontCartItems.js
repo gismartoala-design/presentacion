@@ -34,6 +34,78 @@ function buildProductNameCandidates(value = "") {
   return Array.from(candidates).filter(Boolean);
 }
 
+function scoreProductNameMatch(sourceName = "", candidateName = "") {
+  const source = normalizeProductName(sourceName);
+  const candidate = normalizeProductName(candidateName);
+  if (!source || !candidate) return 0;
+  if (source === candidate) return 1000;
+  if (candidate.includes(source) || source.includes(candidate)) return 700;
+
+  const sourceParts = new Set(source.split(" ").filter(Boolean));
+  const candidateParts = new Set(candidate.split(" ").filter(Boolean));
+
+  let overlap = 0;
+  for (const part of sourceParts) {
+    if (candidateParts.has(part)) overlap += 1;
+  }
+
+  if (overlap === 0) return 0;
+
+  const coverage = overlap / Math.max(sourceParts.size, 1);
+  const precision = overlap / Math.max(candidateParts.size, 1);
+
+  return Math.round((coverage * 0.7 + precision * 0.3) * 100);
+}
+
+async function findBestProductByName(prisma, productName) {
+  const candidates = buildProductNameCandidates(productName);
+  let bestProduct = null;
+  let bestScore = 0;
+
+  for (const candidate of candidates) {
+    const products = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        name: { contains: candidate, mode: "insensitive" },
+      },
+      select: { id: true, image: true, name: true },
+      take: 15,
+    });
+
+    for (const product of products) {
+      const score = scoreProductNameMatch(productName, product.name);
+      if (score > bestScore) {
+        bestScore = score;
+        bestProduct = product;
+      }
+    }
+
+    if (bestScore >= 700) {
+      return bestProduct;
+    }
+  }
+
+  if (bestProduct) {
+    return bestProduct;
+  }
+
+  const fallbackProducts = await prisma.product.findMany({
+    where: { isActive: true },
+    select: { id: true, image: true, name: true },
+    take: 100,
+  });
+
+  for (const product of fallbackProducts) {
+    const score = scoreProductNameMatch(productName, product.name);
+    if (score > bestScore) {
+      bestScore = score;
+      bestProduct = product;
+    }
+  }
+
+  return bestScore >= 45 ? bestProduct : null;
+}
+
 function parseStorefrontMoney(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
 
@@ -119,29 +191,7 @@ async function hydrateStorefrontItems(prisma, items) {
         };
       }
 
-      const candidates = buildProductNameCandidates(item.productName);
-      let product = null;
-
-      for (const candidate of candidates) {
-        const products = await prisma.product.findMany({
-          where: {
-            isActive: true,
-            name: { contains: candidate, mode: "insensitive" },
-          },
-          select: { id: true, image: true, name: true },
-          take: 10,
-        });
-
-        const candidateNormalized = normalizeProductName(candidate);
-        product =
-          products.find((entry) => normalizeProductName(entry.name) === normalizeProductName(item.productName)) ||
-          products.find((entry) => normalizeProductName(entry.name).includes(candidateNormalized)) ||
-          products.find((entry) => candidateNormalized.includes(normalizeProductName(entry.name))) ||
-          products[0] ||
-          null;
-
-        if (product) break;
-      }
+      const product = await findBestProductByName(prisma, item.productName);
 
       return {
         ...item,
