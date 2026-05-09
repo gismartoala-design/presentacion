@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import ecommerceService from "@/core/api/ecommerce-service";
+import { getImageUrl } from "@/core/utils/variables";
 import { Button } from "@/shared/components/ui/button";
 
 type AbandonedCartStatus = "NEW" | "CONTACTED" | "RECOVERED" | "CLOSED";
@@ -18,7 +19,14 @@ type AbandonedCart = {
   cardMessage?: string | null;
   couponCode?: string | null;
   total: number;
-  items: Array<{ name: string; quantity: number; price: number | string }>;
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number | string;
+    image?: string | null;
+    productImage?: string | null;
+    variantName?: string | null;
+  }>;
   source?: string | null;
   emailSent: boolean;
   ownerEmail?: string | null;
@@ -263,12 +271,31 @@ export default function AbandonedCartsPage() {
                   {(selectedCart.items || []).map((item, index) => (
                     <div
                       key={`${item.name}-${index}`}
-                      className="flex items-center justify-between gap-3 text-sm"
+                      className="flex items-center justify-between gap-3 rounded-lg border bg-white p-3 text-sm"
                     >
-                      <span className="text-gray-700">
-                        {item.name} x {item.quantity}
+                      <div className="flex min-w-0 items-center gap-3">
+                        <img
+                          src={getImageUrl(item.productImage || item.image)}
+                          alt={item.name}
+                          className="h-14 w-14 shrink-0 rounded-lg border object-cover"
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-900">
+                            {item.name}
+                          </p>
+                          {item.variantName ? (
+                            <p className="mt-0.5 text-xs text-gray-500">{item.variantName}</p>
+                          ) : null}
+                          <p className="mt-1 text-xs text-gray-600">
+                            Cantidad: {item.quantity}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 font-medium text-gray-900">
+                        {typeof item.price === "number"
+                          ? `$${Number(item.price).toFixed(2)}`
+                          : item.price}
                       </span>
-                      <span className="font-medium text-gray-900">{item.price}</span>
                     </div>
                   ))}
                 </div>

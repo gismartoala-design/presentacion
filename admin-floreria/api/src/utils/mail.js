@@ -1,4 +1,6 @@
 const nodemailer = require("nodemailer");
+const { existsSync } = require("fs");
+const path = require("path");
 const { getDefaultFrom, getSmtpConfig } = require("./smtpConfig");
 
 const transporter = nodemailer.createTransport(getSmtpConfig());
@@ -30,6 +32,44 @@ function resolveImageUrl(imagePath, storeUrl) {
   }
 }
 
+function sanitizeCidFragment(value, fallback = "item") {
+  const normalized = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
+  return normalized || fallback;
+}
+
+function resolveLocalPublicImagePath(imagePath) {
+  const value = String(imagePath || "").trim();
+  if (!value || value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:image/")) {
+    return "";
+  }
+
+  const normalizedPath = decodeURIComponent(value.startsWith("/") ? value.slice(1) : value);
+  const candidatePath = path.resolve(__dirname, "../../../client/public", normalizedPath);
+  return existsSync(candidatePath) ? candidatePath : "";
+}
+
+function buildEmailImageSource(imagePath, attachments, cidPrefix, storeUrl) {
+  const localPath = resolveLocalPublicImagePath(imagePath);
+  if (localPath) {
+    const cid = `${cidPrefix}-${sanitizeCidFragment(path.basename(localPath), "image")}@difiori`;
+    attachments.push({
+      filename: path.basename(localPath),
+      path: localPath,
+      cid,
+    });
+    return `cid:${cid}`;
+  }
+
+  return resolveImageUrl(imagePath, storeUrl);
+}
+
 async function sendAbandonedCartEmail({
   customerName,
   phone,
@@ -55,9 +95,15 @@ async function sendAbandonedCartEmail({
 }) {
   const adminEmail = recipientEmail || process.env.COMPANY_EMAIL || process.env.ADMIN_EMAIL || "ventas@difiori.com.ec";
   const safeTotal = Number(total) || 0;
+  const attachments = [];
 
-  const normalizedItems = (Array.isArray(items) ? items : []).map((item) => {
-    const imageUrl = resolveImageUrl(item.productImage || item.image, storeUrl);
+  const normalizedItems = (Array.isArray(items) ? items : []).map((item, index) => {
+    const imageUrl = buildEmailImageSource(
+      item.productImage || item.image,
+      attachments,
+      `abandoned-item-${index + 1}`,
+      storeUrl
+    );
     const price = Number(item.price || 0);
     const quantity = Number(item.quantity || 1);
     const lineTotal = price * quantity;
@@ -178,6 +224,7 @@ async function sendAbandonedCartEmail({
         </p>
       </div>
     `,
+    attachments,
     text: `Carrito abandonado detectado\n\nResponsable: ${ownerName || "Equipo comercial"}\n${detailsText}\n\nTotal estimado: $${formatMoney(safeTotal)}\n\nProductos:\n${normalizedItems.map((item) => `- ${item.name}${item.variantName ? ` (${item.variantName})` : ""} | Cant: ${item.quantity} | Precio: $${formatMoney(item.price)} | Total: $${formatMoney(item.lineTotal)}`).join("\n")}\n\nWhatsApp: ${waLink}`,
   };
 
