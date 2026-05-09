@@ -1,3 +1,5 @@
+const { resolvePublicMediaUrl } = require("./publicMediaUrl");
+
 function parseStorefrontMoney(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
 
@@ -45,7 +47,7 @@ function normalizeStorefrontItems(rawItems, fallbackItem = {}) {
       return {
         productId: productId || null,
         productName,
-        productImage: productImage || null,
+        productImage: resolvePublicMediaUrl(productImage) || productImage || null,
         variantName: variantName || null,
         quantity,
         price,
@@ -70,7 +72,7 @@ async function hydrateStorefrontItems(prisma, items) {
           return {
             ...item,
             productId: product.id,
-            productImage: item.productImage || product.image || null,
+            productImage: resolvePublicMediaUrl(item.productImage || product.image) || null,
             productName: item.productName || product.name || "Producto DIFIORI",
           };
         }
@@ -94,7 +96,7 @@ async function hydrateStorefrontItems(prisma, items) {
       return {
         ...item,
         productId: product?.id || null,
-        productImage: item.productImage || product?.image || null,
+        productImage: resolvePublicMediaUrl(item.productImage || product?.image) || null,
         productName: item.productName || product?.name || "Producto DIFIORI",
       };
     })
