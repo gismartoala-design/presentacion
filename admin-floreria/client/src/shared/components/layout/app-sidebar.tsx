@@ -10,6 +10,7 @@ import {
   IconAppWindow,
   IconCreditCard,
   IconBell,
+  IconChartBar,
 } from "@tabler/icons-react";
 
 
@@ -51,6 +52,11 @@ const navItems = {
       title: "Pedidos",
       url: "/app/orders",
       icon: IconShoppingCart,
+    },
+    {
+      title: "Reportes",
+      url: "/app/reports",
+      icon: IconChartBar,
     },
     {
       title: "Pagos",

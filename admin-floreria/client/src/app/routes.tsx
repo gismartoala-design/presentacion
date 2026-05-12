@@ -14,6 +14,7 @@ const AdminDashboard = lazy(
   () => import("@/features/dashboard/pages/dashboard-page")
 );
 const OrdersPage = lazy(() => import("@/features/orders/pages/order-page"));
+const ReportsPage = lazy(() => import("@/features/reports/pages/reports-page"));
 const PaymentsPage = lazy(() => import("@/features/payments/pages/payments-page"));
 const AbandonedCartsPage = lazy(
   () => import("@/features/abandoned-carts/pages/abandoned-carts-page")
@@ -116,6 +117,14 @@ export default function Routes() {
           element: (
             <Suspense fallback={<Loading />}>
               <OrdersPage />
+            </Suspense>
+          ),
+        },
+        {
+          path: "reports",
+          element: (
+            <Suspense fallback={<Loading />}>
+              <ReportsPage />
             </Suspense>
           ),
         },
